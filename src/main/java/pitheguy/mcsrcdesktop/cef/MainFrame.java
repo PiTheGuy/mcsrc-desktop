@@ -12,11 +12,11 @@ public class MainFrame extends JFrame {
     public MainFrame(CefBrowser browser) {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1280, 720);
-        //setExtendedState(getExtendedState() | JFrame.MAXIMIZED_BOTH);
+        setExtendedState(getExtendedState() | JFrame.MAXIMIZED_BOTH);
         setTitle("mcsrc Desktop");
         JButton devToolsBtn = new JButton("DevTools");
         devToolsBtn.addActionListener(e -> browser.openDevTools());
-        //getContentPane().add(devToolsBtn, BorderLayout.NORTH);
+        getContentPane().add(devToolsBtn, BorderLayout.NORTH);
         getContentPane().add(browser.getUIComponent());
         setVisible(true);
         addWindowListener(new WindowAdapter() {

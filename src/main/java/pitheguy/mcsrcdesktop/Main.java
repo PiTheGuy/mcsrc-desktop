@@ -6,6 +6,7 @@ import org.cef.CefApp;
 import org.cef.CefClient;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefMessageRouter;
+import org.cef.callback.CefSchemeRegistrar;
 import pitheguy.mcsrcdesktop.cef.EventHandler;
 import pitheguy.mcsrcdesktop.cef.MainFrame;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;

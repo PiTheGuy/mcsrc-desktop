@@ -5,8 +5,7 @@ import com.google.gson.*;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 import pitheguy.mcsrcdesktop.util.OS;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -44,7 +43,7 @@ public class MinecraftDownloader {
         return GSON.fromJson(response.body(), VersionInfo.class);
     }
 
-    public CompletableFuture<File> fetchJar(VersionInfo versionInfo) throws IOException {
+    public CompletableFuture<File> fetchJar(VersionInfo versionInfo, ProgressListener progressListener) throws IOException {
         String fileName = versionInfo.id() + ".jar";
         Path path = dataDir.resolve("versions").resolve(fileName);
         Files.createDirectories(path.getParent());
@@ -59,7 +58,35 @@ public class MinecraftDownloader {
         }
         String url = versionInfo.downloads().client().url();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
-        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofFile(path)).thenApply(response -> response.body().toFile());
+
+
+        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
+                .thenApply(response -> {
+                    long contentLength = response.headers()
+                            .firstValueAsLong("Content-Length")
+                            .orElse(-1L);
+
+                    try (InputStream in = response.body();
+                         OutputStream out = Files.newOutputStream(path)) {
+
+                        byte[] buffer = new byte[8192];
+                        long totalRead = 0;
+                        int read;
+
+                        while ((read = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, read);
+                            totalRead += read;
+
+                            if (progressListener != null && contentLength > 0) {
+                                progressListener.update((double) totalRead / contentLength);
+                            }
+                        }
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+
+                    return path.toFile();
+                });
     }
 
     //TODO add support for mappings
@@ -89,5 +116,9 @@ public class MinecraftDownloader {
         }
         return CompletableFuture.allOf(pathFutures.toArray(CompletableFuture[]::new))
                 .thenApply(_ -> pathFutures.stream().map(CompletableFuture::join).toList());
+    }
+
+    public interface ProgressListener {
+        void update(double progress);
     }
 }
