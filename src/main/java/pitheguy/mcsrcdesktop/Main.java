@@ -16,6 +16,7 @@ public class Main {
     void main() throws Exception {
         CefAppBuilder builder = new CefAppBuilder();
         builder.getCefSettings().windowless_rendering_enabled = false;
+        builder.getCefSettings().cache_path = Util.getAppDataDir().resolve("cache").toString();
         builder.setAppHandler(new MavenCefAppHandlerAdapter() {
             @Override
             public void stateHasChanged(CefApp.CefAppState state) {
