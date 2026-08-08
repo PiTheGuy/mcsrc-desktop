@@ -3,7 +3,6 @@ package pitheguy.mcsrcdesktop.download;
 import com.google.common.hash.Hashing;
 import com.google.gson.*;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
-import pitheguy.mcsrcdesktop.util.OS;
 
 import java.io.*;
 import java.net.URI;
@@ -25,14 +24,17 @@ public class MinecraftDownloader {
     public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private final Path dataDir;
 
+    private VersionManifest manifest;
+
     public MinecraftDownloader(Path dataDir) {
         this.dataDir = dataDir;
     }
 
     public VersionManifest fetchVersionManifest() throws IOException, InterruptedException {
+        if (manifest != null) return manifest;
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")).build();
         var response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-        return GSON.fromJson(response.body(), VersionManifest.class);
+        return manifest = GSON.fromJson(response.body(), VersionManifest.class);
     }
 
     public VersionInfo fetchVersionInfo(VersionManifest manifest, String version) throws IOException, InterruptedException {
@@ -43,7 +45,13 @@ public class MinecraftDownloader {
         return GSON.fromJson(response.body(), VersionInfo.class);
     }
 
-    public CompletableFuture<File> fetchJar(VersionInfo versionInfo, ProgressListener progressListener) throws IOException {
+    public File fetchJar(VersionInfo versionInfo) {
+        String fileName = versionInfo.id() + ".jar";
+        Path path = dataDir.resolve("versions").resolve(fileName);
+        return path.toFile();
+    }
+
+    public CompletableFuture<File> downloadJar(VersionInfo versionInfo, ProgressListener progressListener) throws IOException {
         String fileName = versionInfo.id() + ".jar";
         Path path = dataDir.resolve("versions").resolve(fileName);
         Files.createDirectories(path.getParent());
@@ -91,7 +99,18 @@ public class MinecraftDownloader {
 
     //TODO add support for mappings
 
-    public CompletableFuture<List<File>> fetchLibraries(VersionInfo versionInfo) throws IOException {
+    public List<File> fetchLibraries(VersionInfo versionInfo) {
+        Path librariesDir = dataDir.resolve("libraries");
+        List<File> libraries = new ArrayList<>();
+        for (VersionInfo.Library library : versionInfo.libraries()) {
+            if (!library.matchesRules()) continue;
+            File libraryFile = librariesDir.resolve(library.downloads().artifact().path()).toFile();
+            libraries.add(libraryFile);
+        }
+        return libraries;
+    }
+
+    public CompletableFuture<List<File>> downloadLibraries(VersionInfo versionInfo) throws IOException {
         Path librariesDir = dataDir.resolve("libraries");
         List<CompletableFuture<File>> pathFutures = new ArrayList<>();
         for (VersionInfo.Library library : versionInfo.libraries()) {
