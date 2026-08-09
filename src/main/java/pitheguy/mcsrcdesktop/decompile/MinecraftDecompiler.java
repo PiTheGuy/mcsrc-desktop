@@ -1,7 +1,6 @@
 package pitheguy.mcsrcdesktop.decompile;
 
 import org.jetbrains.java.decompiler.api.Decompiler;
-import org.jetbrains.java.decompiler.main.Fernflower;
 import org.jetbrains.java.decompiler.main.extern.TextTokenVisitor;
 
 import java.io.File;

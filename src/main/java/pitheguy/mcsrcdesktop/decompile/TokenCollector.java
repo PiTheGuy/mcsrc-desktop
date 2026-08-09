@@ -8,7 +8,6 @@ import org.jetbrains.java.decompiler.util.token.TextRange;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class TokenCollector extends TextTokenVisitor {
     private String currentContent = null;
@@ -67,7 +66,4 @@ public class TokenCollector extends TextTokenVisitor {
         currentContent = null;
     }
 
-    public Map<String, List<Token>> allTokens() {
-        return tokens;
-    }
 }

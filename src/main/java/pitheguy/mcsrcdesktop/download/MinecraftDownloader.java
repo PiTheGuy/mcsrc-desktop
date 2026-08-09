@@ -1,7 +1,8 @@
 package pitheguy.mcsrcdesktop.download;
 
 import com.google.common.hash.Hashing;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 
 import java.io.*;
@@ -32,7 +33,7 @@ public class MinecraftDownloader {
 
     public VersionManifest fetchVersionManifest() throws IOException, InterruptedException {
         if (manifest != null) return manifest;
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(MANIFEST_URL)).build();
         var response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         return manifest = GSON.fromJson(response.body(), VersionManifest.class);
     }

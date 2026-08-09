@@ -9,7 +9,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class ClassSource implements IContextSource {
@@ -74,7 +73,7 @@ public class ClassSource implements IContextSource {
             }
 
             @Override
-            public void close() throws IOException {
+            public void close() {
 
             }
         };

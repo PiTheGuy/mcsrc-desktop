@@ -15,7 +15,7 @@ public class MainFrame extends JFrame {
         setExtendedState(getExtendedState() | JFrame.MAXIMIZED_BOTH);
         setTitle("mcsrc Desktop");
         JButton devToolsBtn = new JButton("DevTools");
-        devToolsBtn.addActionListener(e -> browser.openDevTools());
+        devToolsBtn.addActionListener(_ -> browser.openDevTools());
         getContentPane().add(devToolsBtn, BorderLayout.NORTH);
         getContentPane().add(browser.getUIComponent());
         setVisible(true);

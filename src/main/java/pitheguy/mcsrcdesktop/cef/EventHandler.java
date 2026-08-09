@@ -16,8 +16,6 @@ import pitheguy.mcsrcdesktop.download.VersionManifest;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Base64;

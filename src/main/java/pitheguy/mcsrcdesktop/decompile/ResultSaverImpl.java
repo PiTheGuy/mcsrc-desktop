@@ -2,8 +2,6 @@ package pitheguy.mcsrcdesktop.decompile;
 
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.jar.Manifest;
 
 public class ResultSaverImpl implements IResultSaver {
