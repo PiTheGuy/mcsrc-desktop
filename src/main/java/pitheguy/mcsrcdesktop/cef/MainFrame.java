@@ -26,14 +26,6 @@ public class MainFrame extends JFrame {
                 dispose();
             }
         });
-//        InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-//        ActionMap actionMap = getRootPane().getActionMap();
-//        inputMap.put(KeyStroke.getKeyStroke("F12"), "toggleDevTools");
-//        actionMap.put("toggleDevTools", new AbstractAction() {
-//            @Override
-//            public void actionPerformed(java.awt.event.ActionEvent e) {
-//                browser.openDevTools();
-//            }
-//        });
+        setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icon.png")));
     }
 }
