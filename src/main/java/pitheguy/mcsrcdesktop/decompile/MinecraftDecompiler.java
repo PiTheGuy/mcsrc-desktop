@@ -16,10 +16,12 @@ import java.util.List;
 import java.util.Map;
 
 public class MinecraftDecompiler {
+    private final String version;
     private final File jar;
     private final List<File> libraries;
 
-    private MinecraftDecompiler(File jar, List<File> libraries) {
+    private MinecraftDecompiler(String version, File jar, List<File> libraries) {
+        this.version = version;
         this.jar = jar;
         this.libraries = libraries;
     }
@@ -29,11 +31,14 @@ public class MinecraftDecompiler {
         VersionInfo versionInfo = downloader.fetchVersionInfo(manifest, version);
         File jar = downloader.fetchJar(versionInfo);
         List<File> libraries = downloader.fetchLibraries(versionInfo);
-        return new MinecraftDecompiler(jar, libraries);
+        return new MinecraftDecompiler(version, jar, libraries);
     }
 
     public DecompileResult decompile(String className) {
         try {
+            if (DecompilerCache.contains(className, version)) {
+                return DecompilerCache.get(className, version);
+            }
             if (!jar.exists() || libraries.stream().anyMatch(lib -> !lib.exists()))
                 throw new IllegalStateException("Version not downloaded!");
             List<File> allLibraries = new ArrayList<>(libraries);
@@ -51,7 +56,9 @@ public class MinecraftDecompiler {
 
             String source = output.get(className);
             Token[] classTokens = tokens.get(source).toArray(Token[]::new);
-            return new DecompileResult(className, classSource.crc32(), source, classTokens, DecompileResult.Language.JAVA);
+            DecompileResult result = new DecompileResult(className, classSource.crc32(), source, classTokens, DecompileResult.Language.JAVA);
+            DecompilerCache.put(className, version, result);
+            return result;
         } catch (Exception e) {
             StackTraceWriter sw = new StackTraceWriter();
             e.printStackTrace(new PrintWriter(sw));
