@@ -81,27 +81,12 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
         String className = request.get("className").getAsString();
         String version = request.get("version").getAsString();
         try {
-            VersionManifest manifest = downloader.fetchVersionManifest();
-            VersionInfo versionInfo = downloader.fetchVersionInfo(manifest, version);
-            File jar = downloader.fetchJar(versionInfo);
-            List<File> libraries = downloader.fetchLibraries(versionInfo);
-            if (!jar.exists() || libraries.stream().anyMatch(lib -> !lib.exists())) {
-                throw new IllegalStateException("Version not downloaded!");
-            }
-            DecompileResult result = MinecraftDecompiler.decompile(jar, libraries, className);
+            MinecraftDecompiler decompiler = MinecraftDecompiler.create(downloader, version);
+            DecompileResult result = decompiler.decompile(className);
             callback.success(GSON.toJson(result));
         } catch (Exception e) {
             e.printStackTrace();
             callback.failure(-2, "Decompile failed: " + e.getMessage());
         }
-
-
-//        CompletableFuture.supplyAsync(() -> MinecraftDecompiler.decompile(mainJar, libraries, className))
-//                .thenAccept(result -> callback.success(GSON.toJson(result)))
-//                .exceptionally(e -> {
-//                    e.printStackTrace();
-//                    callback.failure(-2, "Decompile failed: " + e.getMessage());
-//                    return null;
-//                });
     }
 }

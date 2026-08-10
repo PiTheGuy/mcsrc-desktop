@@ -2,8 +2,12 @@ package pitheguy.mcsrcdesktop.decompile;
 
 import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.extern.TextTokenVisitor;
+import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
+import pitheguy.mcsrcdesktop.download.VersionInfo;
+import pitheguy.mcsrcdesktop.download.VersionManifest;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -12,12 +16,30 @@ import java.util.List;
 import java.util.Map;
 
 public class MinecraftDecompiler {
-    public static DecompileResult decompile(File input, List<File> libraries, String className) {
+    private final File jar;
+    private final List<File> libraries;
+
+    private MinecraftDecompiler(File jar, List<File> libraries) {
+        this.jar = jar;
+        this.libraries = libraries;
+    }
+
+    public static MinecraftDecompiler create(MinecraftDownloader downloader, String version) throws IOException, InterruptedException {
+        VersionManifest manifest = downloader.fetchVersionManifest();
+        VersionInfo versionInfo = downloader.fetchVersionInfo(manifest, version);
+        File jar = downloader.fetchJar(versionInfo);
+        List<File> libraries = downloader.fetchLibraries(versionInfo);
+        return new MinecraftDecompiler(jar, libraries);
+    }
+
+    public DecompileResult decompile(String className) {
         try {
+            if (!jar.exists() || libraries.stream().anyMatch(lib -> !lib.exists()))
+                throw new IllegalStateException("Version not downloaded!");
             List<File> allLibraries = new ArrayList<>(libraries);
-            allLibraries.add(input);
+            allLibraries.add(jar);
             Map<String, String> output = new HashMap<>();
-            ClassSource classSource = new ClassSource(input, className, output);
+            ClassSource classSource = new ClassSource(jar, className, output);
             Map<String, List<Token>> tokens = new HashMap<>();
             Decompiler decompiler = Decompiler.builder()
                     .inputs(classSource)
