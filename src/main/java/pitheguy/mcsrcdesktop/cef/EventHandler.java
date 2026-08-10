@@ -49,7 +49,6 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
 
     private void handleDownload(JsonObject request, CefQueryCallback callback) {
         try {
-            System.out.println("Starting download");
             String version = request.get("version").getAsString();
             VersionManifest manifest = downloader.fetchVersionManifest();
             VersionInfo versionInfo = downloader.fetchVersionInfo(manifest, version);
@@ -66,7 +65,6 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
                     json.addProperty("type", "done");
                     json.addProperty("path", "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(jarFuture.get().toPath())));
                     callback.success(GSON.toJson(json));
-                    System.out.println("Finished downloading");
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

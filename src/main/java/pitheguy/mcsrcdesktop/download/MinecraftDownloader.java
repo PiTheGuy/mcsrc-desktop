@@ -66,6 +66,7 @@ public class MinecraftDownloader {
             }
         }
         String url = versionInfo.downloads().client().url();
+        System.out.println("Downloading " + fileName + " (" + versionInfo.downloads().client().size() + " bytes)");
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
 
 
