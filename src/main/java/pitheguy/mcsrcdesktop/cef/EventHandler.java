@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class EventHandler extends CefMessageRouterHandlerAdapter {
     public static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Instant.class, new ExtraTypeAdapters.InstantAdapter())
+            .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
             .create();
 
     private final MinecraftDownloader downloader;

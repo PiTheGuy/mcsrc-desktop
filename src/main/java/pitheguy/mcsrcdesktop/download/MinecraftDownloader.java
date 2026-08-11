@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 public class MinecraftDownloader {
     public static final String MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
     public static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Instant.class, new ExtraTypeAdapters.InstantAdapter())
+            .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
             .create();
     public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private final Path dataDir;

@@ -4,14 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import org.cef.callback.CefQueryCallback;
-import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 import pitheguy.mcsrcdesktop.util.ProgressListener;
-
-import java.time.Instant;
 
 public class ProgressUpdater implements ProgressListener {
     public static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Instant.class, new ExtraTypeAdapters.InstantAdapter())
             .create();
 
     private final CefQueryCallback callback;
