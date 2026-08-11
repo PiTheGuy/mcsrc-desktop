@@ -3,7 +3,7 @@ package pitheguy.mcsrcdesktop.decompile;
 import com.google.gson.annotations.SerializedName;
 
 public record DecompileResult(
-        @SerializedName("class")
+        @SerializedName("className")
         String className,
         @SerializedName("checksum")
         long checksum,
