@@ -13,13 +13,12 @@ import pitheguy.mcsrcdesktop.decompile.MinecraftDecompiler;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.download.VersionInfo;
 import pitheguy.mcsrcdesktop.download.VersionManifest;
+import pitheguy.mcsrcdesktop.index.IndexEventHandler;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class EventHandler extends CefMessageRouterHandlerAdapter {
@@ -28,9 +27,12 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             .create();
 
     private final MinecraftDownloader downloader;
+    private final IndexEventHandler indexHandler;
+
 
     public EventHandler(MinecraftDownloader downloader) {
         this.downloader = downloader;
+        this.indexHandler = new IndexEventHandler(this.downloader);
     }
 
     @Override
@@ -40,6 +42,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
         switch (requestJson.get("action").getAsString()) {
             case "download" -> handleDownload(requestJson, callback);
             case "decompile" -> handleDecompile(requestJson, callback);
+            case "index" -> handleIndex(requestJson, callback);
             default -> {
                 return false;
             }
@@ -52,19 +55,13 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             String version = request.get("version").getAsString();
             VersionManifest manifest = downloader.fetchVersionManifest();
             VersionInfo versionInfo = downloader.fetchVersionInfo(manifest, version);
-            var jarFuture = downloader.downloadJar(versionInfo, progress -> {
-                JsonObject json = new JsonObject();
-                json.addProperty("type", "progress");
-                json.addProperty("progress", progress);
-                callback.success(GSON.toJson(json));
-            });
+            ProgressUpdater progressUpdater = new ProgressUpdater(callback);
+            var jarFuture = downloader.downloadJar(versionInfo, progressUpdater);
             var librariesFuture = downloader.downloadLibraries(versionInfo);
             CompletableFuture.allOf(jarFuture, librariesFuture).thenRun(() -> {
                 try {
-                    JsonObject json = new JsonObject();
-                    json.addProperty("type", "done");
-                    json.addProperty("path", "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(jarFuture.get().toPath())));
-                    callback.success(GSON.toJson(json));
+                    String result = "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(jarFuture.get().toPath()));
+                    progressUpdater.finish(result);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -85,6 +82,15 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
         } catch (Exception e) {
             e.printStackTrace();
             callback.failure(-2, "Decompile failed: " + e.getMessage());
+        }
+    }
+
+    private void handleIndex(JsonObject request, CefQueryCallback callback) {
+        try {
+            indexHandler.handleEvent(request, callback);
+        } catch (Exception e) {
+            e.printStackTrace();
+            callback.failure(-2, "Index failed: " + e.getMessage());
         }
     }
 }

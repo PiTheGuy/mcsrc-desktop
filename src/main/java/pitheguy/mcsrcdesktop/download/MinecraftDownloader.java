@@ -4,6 +4,7 @@ import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
+import pitheguy.mcsrcdesktop.util.ProgressListener;
 
 import java.io.*;
 import java.net.URI;
@@ -44,6 +45,12 @@ public class MinecraftDownloader {
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(entry.url())).build();
         var response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         return GSON.fromJson(response.body(), VersionInfo.class);
+    }
+
+    public File fetchJar(String version) {
+        String fileName = version + ".jar";
+        Path path = dataDir.resolve("versions").resolve(fileName);
+        return path.toFile();
     }
 
     public File fetchJar(VersionInfo versionInfo) {
@@ -139,7 +146,4 @@ public class MinecraftDownloader {
                 .thenApply(_ -> pathFutures.stream().map(CompletableFuture::join).toList());
     }
 
-    public interface ProgressListener {
-        void update(double progress);
-    }
 }
