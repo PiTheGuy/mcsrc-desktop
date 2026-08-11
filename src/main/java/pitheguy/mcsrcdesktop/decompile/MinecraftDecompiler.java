@@ -1,5 +1,6 @@
 package pitheguy.mcsrcdesktop.decompile;
 
+import mcsrc.BytecodePrinter;
 import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.extern.TextTokenVisitor;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
@@ -14,6 +15,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class MinecraftDecompiler {
     private final String version;
@@ -39,8 +42,7 @@ public class MinecraftDecompiler {
             if (DecompilerCache.contains(className, version)) {
                 return DecompilerCache.get(className, version);
             }
-            if (!jar.exists() || libraries.stream().anyMatch(lib -> !lib.exists()))
-                throw new IllegalStateException("Version not downloaded!");
+            checkVersionDownloaded();
             List<File> allLibraries = new ArrayList<>(libraries);
             allLibraries.add(jar);
             Map<String, String> output = new HashMap<>();
@@ -62,12 +64,31 @@ public class MinecraftDecompiler {
         } catch (Exception e) {
             StackTraceWriter sw = new StackTraceWriter();
             e.printStackTrace(new PrintWriter(sw));
-
             String message = "// Error during decompilation" + "\n" + sw;
             return new DecompileResult(className, 0, message, new Token[0], DecompileResult.Language.JAVA);
         }
     }
-    
+
+    public DecompileResult getBytecode(String className) {
+        checkVersionDownloaded();
+        try (ZipFile zip = new ZipFile(jar)){
+            ZipEntry entry = zip.getEntry(className + ".class");
+            byte[] bytes = zip.getInputStream(entry).readAllBytes();
+            String result = BytecodePrinter.print(bytes);
+            return new DecompileResult(className, entry.getCrc(), result, new Token[0], DecompileResult.Language.BYTECODE);
+        } catch (Exception e) {
+            StackTraceWriter sw = new StackTraceWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            String message = "// Error during bytecode retrieval" + "\n" + sw;
+            return new DecompileResult(className, 0, message, new Token[0], DecompileResult.Language.BYTECODE);
+        }
+    }
+
+    private void checkVersionDownloaded() {
+        if (!jar.exists() || libraries.stream().anyMatch(lib -> !lib.exists()))
+            throw new IllegalStateException("Version not downloaded!");
+    }
+
     private static class StackTraceWriter extends StringWriter {
         private boolean atLineStart = true;
 

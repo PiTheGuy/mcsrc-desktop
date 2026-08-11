@@ -42,6 +42,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
         switch (requestJson.get("action").getAsString()) {
             case "download" -> handleDownload(requestJson, callback);
             case "decompile" -> handleDecompile(requestJson, callback);
+            case "bytecode" -> handleBytecode(requestJson, callback);
             case "index" -> handleIndex(requestJson, callback);
             default -> {
                 return false;
@@ -82,6 +83,19 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
         } catch (Exception e) {
             e.printStackTrace();
             callback.failure(-2, "Decompile failed: " + e.getMessage());
+        }
+    }
+
+    private void handleBytecode(JsonObject request, CefQueryCallback callback) {
+        String className = request.get("className").getAsString();
+        String version = request.get("version").getAsString();
+        try {
+            MinecraftDecompiler decompiler = MinecraftDecompiler.create(downloader, version);
+            DecompileResult result = decompiler.getBytecode(className);
+            callback.success(GSON.toJson(result));
+        } catch (Exception e) {
+            e.printStackTrace();
+            callback.failure(-2, "Bytecode retrieval failed: " + e.getMessage());
         }
     }
 
