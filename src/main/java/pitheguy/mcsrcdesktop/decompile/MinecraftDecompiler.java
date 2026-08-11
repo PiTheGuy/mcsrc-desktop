@@ -37,7 +37,7 @@ public class MinecraftDecompiler {
         return new MinecraftDecompiler(version, jar, libraries);
     }
 
-    public DecompileResult decompile(String className) {
+    public DecompileResult decompile(String className, boolean displayLambdas) {
         try {
             if (DecompilerCache.contains(className, version)) {
                 return DecompilerCache.get(className, version);
@@ -51,6 +51,7 @@ public class MinecraftDecompiler {
             Decompiler decompiler = Decompiler.builder()
                     .inputs(classSource)
                     .libraries(allLibraries.toArray(File[]::new))
+                    .options(getDecompilerOptions(displayLambdas))
                     .output(ResultSaverImpl.INSTANCE)
                     .build();
             TextTokenVisitor.addVisitor(next -> new TokenCollector(next, tokens));
@@ -82,6 +83,10 @@ public class MinecraftDecompiler {
             String message = "// Error during bytecode retrieval" + "\n" + sw;
             return new DecompileResult(className, 0, message, new Token[0], DecompileResult.Language.BYTECODE);
         }
+    }
+
+    private Object[] getDecompilerOptions(boolean displayLambdas) {
+        return displayLambdas ? new Object[] {"mark-corresponding-synthetics", "1"} : new Object[0];
     }
 
     private void checkVersionDownloaded() {

@@ -76,9 +76,10 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
     private void handleDecompile(JsonObject request, CefQueryCallback callback) {
         String className = request.get("className").getAsString();
         String version = request.get("version").getAsString();
+        boolean displayLambdas = request.get("displayLambdas").getAsBoolean();
         try {
             MinecraftDecompiler decompiler = MinecraftDecompiler.create(downloader, version);
-            DecompileResult result = decompiler.decompile(className);
+            DecompileResult result = decompiler.decompile(className, displayLambdas);
             callback.success(GSON.toJson(result));
         } catch (Exception e) {
             e.printStackTrace();
