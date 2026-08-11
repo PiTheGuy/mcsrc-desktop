@@ -25,7 +25,7 @@ public class ProgressUpdater implements ProgressListener {
         JsonObject json = new JsonObject();
         json.addProperty("type", "progress");
         json.addProperty("progress", progress);
-        //callback.success(GSON.toJson(json));
+        callback.success(GSON.toJson(json));
     }
 
     public <R> void finish(R result) {

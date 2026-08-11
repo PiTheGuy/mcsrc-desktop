@@ -1,7 +1,7 @@
 package pitheguy.mcsrcdesktop;
 
-import me.friwi.jcefmaven.CefAppBuilder;
-import me.friwi.jcefmaven.MavenCefAppHandlerAdapter;
+import io.github.trethore.jcefgithub.CefAppBuilder;
+import io.github.trethore.jcefgithub.MavenCefAppHandlerAdapter;
 import org.cef.CefApp;
 import org.cef.CefClient;
 import org.cef.browser.CefBrowser;
