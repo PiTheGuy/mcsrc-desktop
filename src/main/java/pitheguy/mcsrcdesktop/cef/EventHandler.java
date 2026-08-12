@@ -12,10 +12,12 @@ import pitheguy.mcsrcdesktop.decompile.DecompileResult;
 import pitheguy.mcsrcdesktop.decompile.MinecraftDecompiler;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.download.VersionInfo;
-import pitheguy.mcsrcdesktop.download.VersionManifest;
 import pitheguy.mcsrcdesktop.index.IndexEventHandler;
+import pitheguy.mcsrcdesktop.remap.MinecraftRemapper;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Base64;
@@ -44,6 +46,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             case "decompile" -> handleDecompile(requestJson, callback);
             case "bytecode" -> handleBytecode(requestJson, callback);
             case "index" -> handleIndex(requestJson, callback);
+            case "remap" -> handleRemap(requestJson, callback);
             default -> {
                 return false;
             }
@@ -54,15 +57,21 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
     private void handleDownload(JsonObject request, CefQueryCallback callback) {
         try {
             String version = request.get("version").getAsString();
-            VersionManifest manifest = downloader.fetchVersionManifest();
-            VersionInfo versionInfo = downloader.fetchVersionInfo(manifest, version);
+            VersionInfo versionInfo = downloader.fetchVersionInfo(version);
             ProgressUpdater progressUpdater = new ProgressUpdater(callback);
             var jarFuture = downloader.downloadJar(versionInfo, progressUpdater);
+            var mappingsFuture = downloader.downloadMappings(versionInfo);
             var librariesFuture = downloader.downloadLibraries(versionInfo);
-            CompletableFuture.allOf(jarFuture, librariesFuture).thenRun(() -> {
+            CompletableFuture.allOf(jarFuture, mappingsFuture, librariesFuture).thenRun(() -> {
                 try {
-                    String result = "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(jarFuture.get().toPath()));
-                    progressUpdater.finish(result);
+                    JsonObject response = new JsonObject();
+                    String jarUrl = "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(jarFuture.get().toPath()));
+                    response.addProperty("jar", jarUrl);
+                    if (mappingsFuture.get() != null) {
+                        String mappingsUrl = "data:text/plain;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(mappingsFuture.get().toPath()));
+                        response.addProperty("mappings", mappingsUrl);
+                    }
+                    progressUpdater.finish(response);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -106,6 +115,33 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
         } catch (Exception e) {
             e.printStackTrace();
             callback.failure(-2, "Index failed: " + e.getMessage());
+        }
+    }
+
+    private void handleRemap(JsonObject request, CefQueryCallback callback) {
+        String version = request.get("version").getAsString();
+        ProgressUpdater progressUpdater = new ProgressUpdater(callback);
+        try {
+            VersionInfo versionInfo = downloader.fetchVersionInfo(version);
+            File jar = downloader.fetchJar(versionInfo);
+            File mappings = downloader.fetchMappings(versionInfo);
+            MinecraftRemapper remapper = new MinecraftRemapper(jar, mappings);
+            remapper.remap(progressUpdater).thenAccept(remappedJar -> {
+                try {
+                    String url = "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(remappedJar.toPath()));
+                    progressUpdater.finish(url);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }).exceptionally(e -> {
+                e.printStackTrace();
+                callback.failure(-2, "Remap failed: " + e.getMessage());
+                return null;
+            });
+            progressUpdater.finish(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            callback.failure(-2, "Remap failed: " + e.getMessage());
         }
     }
 }

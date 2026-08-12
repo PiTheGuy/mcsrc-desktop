@@ -39,18 +39,13 @@ public class MinecraftDownloader {
         return manifest = GSON.fromJson(response.body(), VersionManifest.class);
     }
 
-    public VersionInfo fetchVersionInfo(VersionManifest manifest, String version) throws IOException, InterruptedException {
+    public VersionInfo fetchVersionInfo(String version) throws IOException, InterruptedException {
+        VersionManifest manifest = fetchVersionManifest();
         VersionManifest.VersionEntry entry = manifest.findVersionEntry(version);
         if (entry == null) throw new IllegalArgumentException("Unknown version: " + version);
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(entry.url())).build();
         var response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         return GSON.fromJson(response.body(), VersionInfo.class);
-    }
-
-    public File fetchJar(String version) {
-        String fileName = version + ".jar";
-        Path path = dataDir.resolve("versions").resolve(fileName);
-        return path.toFile();
     }
 
     public File fetchJar(VersionInfo versionInfo) {
@@ -59,21 +54,23 @@ public class MinecraftDownloader {
         return path.toFile();
     }
 
+    public File fetchRemappedJar(VersionInfo versionInfo) {
+        boolean remap = versionInfo.downloads().clientMappings() != null;
+        String fileName = remap ? versionInfo.id() + "-remapped.jar" : versionInfo.id() + ".jar";
+        Path path = dataDir.resolve("versions").resolve(fileName);
+        return path.toFile();
+    }
+
     public CompletableFuture<File> downloadJar(VersionInfo versionInfo, ProgressListener progressListener) throws IOException {
         String fileName = versionInfo.id() + ".jar";
         Path path = dataDir.resolve("versions").resolve(fileName);
         Files.createDirectories(path.getParent());
-        if (Files.exists(path)) {
-            String fileHash = Hashing.sha1().hashBytes(Files.readAllBytes(path)).toString();
-            if (fileHash.equals(versionInfo.downloads().client().sha1())) {
-                return CompletableFuture.completedFuture(path.toFile());
-            } else {
-                System.out.println("Deleting old version file; hash didn't match"); //TODO proper logging
-                Files.delete(path);
-            }
+        var download = versionInfo.downloads().client();
+        if (checkFileExists(path, download.sha1(), download.size())) {
+            return CompletableFuture.completedFuture(path.toFile());
         }
-        String url = versionInfo.downloads().client().url();
-        System.out.println("Downloading " + fileName + " (" + versionInfo.downloads().client().size() + " bytes)");
+        String url = download.url();
+        System.out.println("Downloading " + fileName + " (" + download.size() + " bytes)");
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
 
 
@@ -106,8 +103,22 @@ public class MinecraftDownloader {
                 });
     }
 
-    //TODO add support for mappings
+    public File fetchMappings(VersionInfo versionInfo) {
+        if (versionInfo.downloads().clientMappings() == null) return null;
+        String fileName = versionInfo.id() + ".txt";
+        Path path = dataDir.resolve("mappings").resolve(fileName);
+        return path.toFile();
+    }
 
+    public CompletableFuture<File> downloadMappings(VersionInfo versionInfo) throws IOException {
+        if (versionInfo.downloads().clientMappings() == null) return CompletableFuture.completedFuture(null);
+        String fileName = versionInfo.id() + ".txt";
+        Path path = dataDir.resolve("mappings").resolve(fileName);
+        VersionInfo.VersionDownloads.Download download = versionInfo.downloads().clientMappings();
+        return downloadFile(download.url(), path, download.sha1(), download.size());
+    }
+
+    //TODO merge library downloads with jar downloads
     public List<File> fetchLibraries(VersionInfo versionInfo) {
         Path librariesDir = dataDir.resolve("libraries");
         List<File> libraries = new ArrayList<>();
@@ -125,25 +136,36 @@ public class MinecraftDownloader {
         for (VersionInfo.Library library : versionInfo.libraries()) {
             if (library.matchesRules()) {
                 Path path = librariesDir.resolve(library.downloads().artifact().path());
-                if (Files.exists(path)) {
-                    String fileHash = Hashing.sha1().hashBytes(Files.readAllBytes(path)).toString();
-                    if (Files.size(path) == library.downloads().artifact().size() && fileHash.equals(library.downloads().artifact().sha1())) {
-                        pathFutures.add(CompletableFuture.completedFuture(path.toFile()));
-                        continue;
-                    } else {
-                        Files.delete(path);
-                    }
-                }
-                Files.createDirectories(path.getParent());
-                System.out.println("Downloading " + path.getFileName() + " (" + library.downloads().artifact().size() + " bytes)");
-                HttpRequest request = HttpRequest.newBuilder().uri(URI.create(library.downloads().artifact().url())).build();
-                CompletableFuture<File> future = HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofFile(path))
-                        .thenApply(response -> response.body().toFile());
+                var artifact = library.downloads().artifact();
+                var future = downloadFile(artifact.url(), path, artifact.sha1(), artifact.size());
                 pathFutures.add(future);
             }
         }
         return CompletableFuture.allOf(pathFutures.toArray(CompletableFuture[]::new))
                 .thenApply(_ -> pathFutures.stream().map(CompletableFuture::join).toList());
+    }
+
+    private static boolean checkFileExists(Path path, String sha1, int size) throws IOException {
+        if (Files.exists(path)) {
+            String fileHash = Hashing.sha1().hashBytes(Files.readAllBytes(path)).toString();
+            if (Files.size(path) == size && fileHash.equals(sha1)) {
+                return true;
+            } else {
+                Files.delete(path);
+            }
+        }
+        return false;
+    }
+
+    private static CompletableFuture<File> downloadFile(String url, Path path, String sha1, int size) throws IOException {
+        if (checkFileExists(path, sha1, size)) {
+            return CompletableFuture.completedFuture(path.toFile());
+        }
+        Files.createDirectories(path.getParent());
+        System.out.println("Downloading " + path.getFileName() + " (" + size + " bytes)");
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
+        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofFile(path))
+                .thenApply(response -> response.body().toFile());
     }
 
 }

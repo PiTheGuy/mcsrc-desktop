@@ -5,7 +5,6 @@ import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.extern.TextTokenVisitor;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.download.VersionInfo;
-import pitheguy.mcsrcdesktop.download.VersionManifest;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,9 +29,8 @@ public class MinecraftDecompiler {
     }
 
     public static MinecraftDecompiler create(MinecraftDownloader downloader, String version) throws IOException, InterruptedException {
-        VersionManifest manifest = downloader.fetchVersionManifest();
-        VersionInfo versionInfo = downloader.fetchVersionInfo(manifest, version);
-        File jar = downloader.fetchJar(versionInfo);
+        VersionInfo versionInfo = downloader.fetchVersionInfo(version);
+        File jar = downloader.fetchRemappedJar(versionInfo);
         List<File> libraries = downloader.fetchLibraries(versionInfo);
         return new MinecraftDecompiler(version, jar, libraries);
     }

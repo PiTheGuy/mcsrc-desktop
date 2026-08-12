@@ -9,6 +9,7 @@ import mcsrc.MemberData;
 import org.cef.callback.CefQueryCallback;
 import pitheguy.mcsrcdesktop.cef.ProgressUpdater;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
+import pitheguy.mcsrcdesktop.download.VersionInfo;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 
 import java.io.File;
@@ -28,7 +29,7 @@ public class IndexEventHandler {
         this.downloader = downloader;
     }
 
-    public void handleEvent(JsonObject request, CefQueryCallback callback) throws IOException {
+    public void handleEvent(JsonObject request, CefQueryCallback callback) throws IOException, InterruptedException {
         String type = request.get("type").getAsString();
         switch (type) {
             case "start" -> handleStart(request, callback);
@@ -40,9 +41,10 @@ public class IndexEventHandler {
         }
     }
 
-    private void handleStart(JsonObject request, CefQueryCallback callback) throws IOException {
+    private void handleStart(JsonObject request, CefQueryCallback callback) throws IOException, InterruptedException {
         String version = request.get("version").getAsString();
-        File jar = downloader.fetchJar(version);
+        VersionInfo versionInfo = downloader.fetchVersionInfo(version);
+        File jar = downloader.fetchRemappedJar(versionInfo);
         indexer = new MinecraftIndexer(jar);
         ProgressUpdater progressUpdater = new ProgressUpdater(callback);
         indexer.index(progressUpdater)
