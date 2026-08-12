@@ -41,6 +41,3 @@ bin/
 
 ### Mac OS ###
 .DS_Store
-
-/jcef-bundle/
-/jcef-bundle.installing.lock

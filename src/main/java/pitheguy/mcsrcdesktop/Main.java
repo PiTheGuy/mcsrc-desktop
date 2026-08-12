@@ -26,6 +26,7 @@ public class Main {
         boolean devMode = options.has(devOpt);
 
         CefAppBuilder builder = new CefAppBuilder();
+        builder.setInstallDir(Util.getAppDataDir().resolve("jcef-bundle").toFile());
         builder.getCefSettings().windowless_rendering_enabled = false;
         builder.getCefSettings().cache_path = Util.getAppDataDir().resolve("cache").toString();
         builder.setAppHandler(new MavenCefAppHandlerAdapter() {
