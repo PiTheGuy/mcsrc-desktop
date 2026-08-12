@@ -15,7 +15,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class MinecraftDownloader {
@@ -27,6 +29,7 @@ public class MinecraftDownloader {
     private final Path dataDir;
 
     private VersionManifest manifest;
+    private final Map<String, VersionInfo> versions = new HashMap<>();
 
     public MinecraftDownloader(Path dataDir) {
         this.dataDir = dataDir;
@@ -40,12 +43,15 @@ public class MinecraftDownloader {
     }
 
     public VersionInfo fetchVersionInfo(String version) throws IOException, InterruptedException {
+        if (versions.containsKey(version)) return versions.get(version);
         VersionManifest manifest = fetchVersionManifest();
         VersionManifest.VersionEntry entry = manifest.findVersionEntry(version);
         if (entry == null) throw new IllegalArgumentException("Unknown version: " + version);
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(entry.url())).build();
         var response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-        return GSON.fromJson(response.body(), VersionInfo.class);
+        VersionInfo versionInfo = GSON.fromJson(response.body(), VersionInfo.class);
+        versions.put(version, versionInfo);
+        return versionInfo;
     }
 
     public File fetchJar(VersionInfo versionInfo) {
