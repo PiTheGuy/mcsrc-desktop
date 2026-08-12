@@ -17,7 +17,7 @@ public record VersionInfo(
         Library[] libraries,
         @SerializedName("releaseTime")
         Instant releaseTime,
-        @SerializedName("sha1")
+        @SerializedName("time")
         Instant time,
         @SerializedName("type")
         VersionType type
