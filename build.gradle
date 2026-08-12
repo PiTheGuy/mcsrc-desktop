@@ -5,7 +5,7 @@ plugins {
 
 group = 'pitheguy'
 
-version = '1.0-SNAPSHOT'
+version = '1.0.0'
 
 repositories {
     mavenCentral()
@@ -13,12 +13,12 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.github.trethore:jcefgithub:146.0.10-jcefgithub.9'
-    implementation 'org.vineflower:vineflower:1.12.0'
-    implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'com.google.guava:guava:33.6.0-jre'
-    implementation 'dev.mcsrc:core:0.2.0'
-    implementation 'net.sf.jopt-simple:jopt-simple:5.0.4'
+    implementation libs.jcef
+    implementation libs.vineflower
+    implementation libs.gson
+    implementation libs.guava
+    implementation libs.mcsrc
+    implementation libs.jopt
 }
 
 java {
