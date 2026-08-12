@@ -17,7 +17,6 @@ import pitheguy.mcsrcdesktop.remap.MinecraftRemapper;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Base64;
@@ -126,18 +125,9 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             File jar = downloader.fetchJar(versionInfo);
             File mappings = downloader.fetchMappings(versionInfo);
             MinecraftRemapper remapper = new MinecraftRemapper(jar, mappings);
-            remapper.remap(progressUpdater).thenAccept(remappedJar -> {
-                try {
-                    String url = "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(remappedJar.toPath()));
-                    progressUpdater.finish(url);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }).exceptionally(e -> {
-                e.printStackTrace();
-                callback.failure(-2, "Remap failed: " + e.getMessage());
-                return null;
-            });
+            File remappedJar = remapper.remap(progressUpdater);
+            String url = "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(remappedJar.toPath()));
+            progressUpdater.finish(url);
             progressUpdater.finish(null);
         } catch (Exception e) {
             e.printStackTrace();

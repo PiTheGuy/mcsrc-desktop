@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -25,9 +24,9 @@ public class MinecraftRemapper {
         this.mappings = mappings;
     }
 
-    public CompletableFuture<File> remap(ProgressListener progressListener) {
+    public File remap(ProgressListener progressListener) {
         if (getOutputJar().exists()) {
-            return CompletableFuture.completedFuture(getOutputJar());
+            return getOutputJar();
         }
         try (ZipFile zip = new ZipFile(jar)) {
             Indexer indexer = new Indexer();
@@ -62,7 +61,7 @@ public class MinecraftRemapper {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return CompletableFuture.completedFuture(getOutputJar());
+        return getOutputJar();
     }
 
     private File getOutputJar() {
