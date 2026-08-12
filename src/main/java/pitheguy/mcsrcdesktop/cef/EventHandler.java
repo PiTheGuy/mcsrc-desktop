@@ -16,8 +16,11 @@ import pitheguy.mcsrcdesktop.download.VersionInfo;
 import pitheguy.mcsrcdesktop.index.IndexEventHandler;
 import pitheguy.mcsrcdesktop.remap.MinecraftRemapper;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
+import pitheguy.mcsrcdesktop.util.SharedConstants;
 
+import java.awt.*;
 import java.io.File;
+import java.net.URI;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Base64;
@@ -42,6 +45,8 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
         System.out.println("Received query: " + request);
         JsonObject requestJson = JsonParser.parseString(request).getAsJsonObject();
         switch (requestJson.get("action").getAsString()) {
+            case "version" -> handleVersion(requestJson, callback);
+            case "update" -> handleUpdate(requestJson, callback);
             case "download" -> handleDownload(requestJson, callback);
             case "decompile" -> handleDecompile(requestJson, callback);
             case "bytecode" -> handleBytecode(requestJson, callback);
@@ -52,6 +57,23 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             }
         }
         return true;
+    }
+
+    private void handleVersion(JsonObject request, CefQueryCallback callback) {
+        JsonObject response = new JsonObject();
+        response.addProperty("protocol", SharedConstants.PROTOCOL_VERSION);
+        response.addProperty("app", SharedConstants.APP_VERSION);
+        callback.success(GSON.toJson(response));
+    }
+
+    private void handleUpdate(JsonObject request, CefQueryCallback callback) {
+        try {
+            //TODO update automatically?
+            Desktop.getDesktop().browse(URI.create("https://github.com/PiTheGuy/mcsrc-desktop/releases/latest"));
+            callback.success("{}");
+        } catch (Exception e) {
+            callback.failure(-2, "Update failed: " + e.getMessage());
+        }
     }
 
     private void handleDownload(JsonObject request, CefQueryCallback callback) {

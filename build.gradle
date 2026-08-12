@@ -4,6 +4,7 @@ plugins {
 }
 
 group = 'pitheguy'
+
 version = '1.0-SNAPSHOT'
 
 repositories {
