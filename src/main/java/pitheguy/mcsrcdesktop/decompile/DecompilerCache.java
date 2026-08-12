@@ -9,17 +9,17 @@ public class DecompilerCache {
     private DecompilerCache() {
     }
 
-    public static boolean contains(String className, String version) {
-        return cache.containsKey(new CacheKey(className, version));
+    public static boolean contains(String className, String version, DecompilerOptions options) {
+        return cache.containsKey(new CacheKey(className, version, options));
     }
 
-    public static DecompileResult get(String className, String version) {
-        return cache.get(new CacheKey(className, version));
+    public static DecompileResult get(String className, String version, DecompilerOptions options) {
+        return cache.get(new CacheKey(className, version, options));
     }
 
-    public static void put(String className, String version, DecompileResult result) {
-        cache.put(new CacheKey(className, version), result);
+    public static void put(String className, String version, DecompilerOptions options, DecompileResult result) {
+        cache.put(new CacheKey(className, version, options), result);
     }
 
-    private record CacheKey(String className, String version) {}
+    private record CacheKey(String className, String version, DecompilerOptions options) {}
 }

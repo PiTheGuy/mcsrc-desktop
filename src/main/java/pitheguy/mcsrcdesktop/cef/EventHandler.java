@@ -9,6 +9,7 @@ import org.cef.browser.CefFrame;
 import org.cef.callback.CefQueryCallback;
 import org.cef.handler.CefMessageRouterHandlerAdapter;
 import pitheguy.mcsrcdesktop.decompile.DecompileResult;
+import pitheguy.mcsrcdesktop.decompile.DecompilerOptions;
 import pitheguy.mcsrcdesktop.decompile.MinecraftDecompiler;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.download.VersionInfo;
@@ -84,10 +85,10 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
     private void handleDecompile(JsonObject request, CefQueryCallback callback) {
         String className = request.get("className").getAsString();
         String version = request.get("version").getAsString();
-        boolean displayLambdas = request.get("displayLambdas").getAsBoolean();
+        DecompilerOptions options = GSON.fromJson(request.get("options"), DecompilerOptions.class);
         try {
             MinecraftDecompiler decompiler = MinecraftDecompiler.create(downloader, version);
-            DecompileResult result = decompiler.decompile(className, displayLambdas);
+            DecompileResult result = decompiler.decompile(className, options);
             callback.success(GSON.toJson(result));
         } catch (Exception e) {
             e.printStackTrace();

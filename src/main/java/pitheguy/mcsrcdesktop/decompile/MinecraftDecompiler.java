@@ -10,10 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -35,10 +32,10 @@ public class MinecraftDecompiler {
         return new MinecraftDecompiler(version, jar, libraries);
     }
 
-    public DecompileResult decompile(String className, boolean displayLambdas) {
+    public DecompileResult decompile(String className, DecompilerOptions options) {
         try {
-            if (DecompilerCache.contains(className, version)) {
-                return DecompilerCache.get(className, version);
+            if (DecompilerCache.contains(className, version, options)) {
+                return DecompilerCache.get(className, version, options);
             }
             checkVersionDownloaded();
             List<File> allLibraries = new ArrayList<>(libraries);
@@ -49,7 +46,7 @@ public class MinecraftDecompiler {
             Decompiler decompiler = Decompiler.builder()
                     .inputs(classSource)
                     .libraries(allLibraries.toArray(File[]::new))
-                    .options(getDecompilerOptions(displayLambdas))
+                    .options(options.toVineflowerOptions())
                     .output(ResultSaverImpl.INSTANCE)
                     .build();
             TextTokenVisitor.addVisitor(next -> new TokenCollector(next, tokens));
@@ -58,7 +55,7 @@ public class MinecraftDecompiler {
             String source = output.get(className);
             Token[] classTokens = tokens.get(source).toArray(Token[]::new);
             DecompileResult result = new DecompileResult(className, classSource.crc32(), source, classTokens, DecompileResult.Language.JAVA);
-            DecompilerCache.put(className, version, result);
+            DecompilerCache.put(className, version, options, result);
             return result;
         } catch (Exception e) {
             StackTraceWriter sw = new StackTraceWriter();
@@ -81,10 +78,6 @@ public class MinecraftDecompiler {
             String message = "// Error during bytecode retrieval" + "\n" + sw;
             return new DecompileResult(className, 0, message, new Token[0], DecompileResult.Language.BYTECODE);
         }
-    }
-
-    private Object[] getDecompilerOptions(boolean displayLambdas) {
-        return displayLambdas ? new Object[] {"mark-corresponding-synthetics", "1"} : new Object[0];
     }
 
     private void checkVersionDownloaded() {
@@ -126,4 +119,5 @@ public class MinecraftDecompiler {
             return result.toString();
         }
     }
+
 }
