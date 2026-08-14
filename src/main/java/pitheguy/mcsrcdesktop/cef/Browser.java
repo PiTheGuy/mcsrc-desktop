@@ -119,6 +119,7 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
         }
     }
 
+    //TODO fix DevTools window being frozen
     @Override
     protected CefBrowserWindowless createDevToolsBrowserWindowless(CefClient client, String url, CefRequestContext context, CefBrowserWindowless parent, Point inspectAt) {
         return new Browser(client, url, context, new CefBrowserSettings(), new Dimension(900, 600), this);

@@ -5,10 +5,7 @@ import io.github.trethore.jcefgithub.MavenCefAppHandlerAdapter;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-import org.cef.CefApp;
-import org.cef.CefBrowserSettings;
-import org.cef.CefClient;
-import org.cef.CefSettings;
+import org.cef.*;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefMessageRouter;
 import pitheguy.mcsrcdesktop.cef.Browser;
@@ -31,10 +28,10 @@ public class Main {
         OptionSpec<Void> devOpt = parser.accepts("dev", "Run in development mode");
         OptionSet options = parser.parse(args);
         boolean devMode = options.has(devOpt);
-
+        boolean useWindowlessRendering = OS.isLinux(); // Use windowless rendering on Linux to avoid windowing issues
         CefAppBuilder builder = new CefAppBuilder();
         builder.setInstallDir(Util.getAppDataDir().resolve("jcef-bundle").toFile());
-        builder.getCefSettings().windowless_rendering_enabled = true;
+        builder.getCefSettings().windowless_rendering_enabled = useWindowlessRendering;
         builder.getCefSettings().cache_path = Util.getAppDataDir().resolve("cache").toString();
         builder.getCefSettings().log_severity = CefSettings.LogSeverity.LOGSEVERITY_VERBOSE;
         builder.getCefSettings().log_file = Util.getAppDataDir().resolve("cef.log").toString();
@@ -48,11 +45,12 @@ public class Main {
         });
         CefApp app = builder.build();
         CefClient client = app.createClient();
-        Function<Dimension, CefBrowser> browserFactory = canvasSize -> new Browser(client, devMode ? DEV_URL : PRODUCTION_URL, null, new CefBrowserSettings(), canvasSize);
+        Function<Dimension, CefBrowser> windowedBrowserFactory = _ -> client.createBrowser(devMode ? DEV_URL : PRODUCTION_URL, false, false);
+        Function<Dimension, CefBrowser> windowlessBrowserFactory = canvasSize -> new Browser(client, devMode ? DEV_URL : PRODUCTION_URL, null, new CefBrowserSettings(), canvasSize);
         CefMessageRouter messageRouter = CefMessageRouter.create();
         MinecraftDownloader downloader = new MinecraftDownloader(Util.getAppDataDir());
         messageRouter.addHandler(new EventHandler(downloader), true);
         client.addMessageRouter(messageRouter);
-        new MainFrame(browserFactory, devMode);
+        new MainFrame(useWindowlessRendering ? windowlessBrowserFactory : windowedBrowserFactory, devMode);
     }
 }
