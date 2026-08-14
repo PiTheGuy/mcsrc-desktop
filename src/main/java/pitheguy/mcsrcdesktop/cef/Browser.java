@@ -2,10 +2,7 @@ package pitheguy.mcsrcdesktop.cef;
 
 import org.cef.CefBrowserSettings;
 import org.cef.CefClient;
-import org.cef.browser.CefBrowser;
-import org.cef.browser.CefBrowserWindowless;
-import org.cef.browser.CefPaintEvent;
-import org.cef.browser.CefRequestContext;
+import org.cef.browser.*;
 import org.cef.callback.CefDragData;
 import org.cef.handler.CefRenderHandler;
 import org.cef.handler.CefScreenInfo;
@@ -27,6 +24,10 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
     private BufferedImage image;
 
     public Browser(CefClient client, String url, CefRequestContext context, CefBrowserSettings settings, Dimension canvasSize) {
+        this(client, url, context, settings, canvasSize, null);
+    }
+
+    public Browser(CefClient client, String url, CefRequestContext context, CefBrowserSettings settings, Dimension canvasSize, CefBrowserWindowless parent) {
         super(client, url, context, settings);
         canvas.setFocusable(true);
         canvas.addComponentListener(new ComponentAdapter() {
@@ -110,23 +111,17 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
             }
         });
         canvas.setSize(canvasSize);
-        createBrowser(client, 0, url, true, false, canvas, context);
+        if (parent != null) {
+            createDevTools(parent, client, 0, true, true, null, null);
+            wasResized(900, 600);
+        } else {
+            createBrowser(client, 0, url, true, false, null, context);
+        }
     }
 
     @Override
     protected CefBrowserWindowless createDevToolsBrowserWindowless(CefClient client, String url, CefRequestContext context, CefBrowserWindowless parent, Point inspectAt) {
-        Browser devTools = new Browser(client, url, context, new CefBrowserSettings(), new Dimension(900, 600));
-
-        SwingUtilities.invokeLater(() -> {
-            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(canvas), "DevTools", false);
-            dialog.setSize(900, 600);
-            dialog.setLocationRelativeTo(canvas);
-            dialog.getContentPane().add(devTools.getUIComponent());
-            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            dialog.setVisible(true);
-        });
-
-        return devTools;
+        return new Browser(client, url, context, new CefBrowserSettings(), new Dimension(900, 600), this);
     }
 
     @Override
@@ -166,7 +161,6 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
 
     @Override
     public void onPopupShow(CefBrowser browser, boolean show) {
-
     }
 
     @Override

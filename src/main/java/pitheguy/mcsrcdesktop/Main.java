@@ -36,6 +36,8 @@ public class Main {
         builder.setInstallDir(Util.getAppDataDir().resolve("jcef-bundle").toFile());
         builder.getCefSettings().windowless_rendering_enabled = true;
         builder.getCefSettings().cache_path = Util.getAppDataDir().resolve("cache").toString();
+        builder.getCefSettings().log_severity = CefSettings.LogSeverity.LOGSEVERITY_VERBOSE;
+        builder.getCefSettings().log_file = Util.getAppDataDir().resolve("cef.log").toString();
         builder.setAppHandler(new MavenCefAppHandlerAdapter() {
             @Override
             public void stateHasChanged(CefApp.CefAppState state) {
