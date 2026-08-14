@@ -6,13 +6,19 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.cef.CefApp;
+import org.cef.CefBrowserSettings;
 import org.cef.CefClient;
+import org.cef.CefSettings;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefMessageRouter;
+import pitheguy.mcsrcdesktop.cef.Browser;
 import pitheguy.mcsrcdesktop.cef.EventHandler;
 import pitheguy.mcsrcdesktop.cef.MainFrame;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.util.Util;
+
+import javax.swing.*;
+import java.util.function.Function;
 
 public class Main {
     public static final String PRODUCTION_URL = "https://mcsrc.pitheguy.workers.dev/";
@@ -27,7 +33,7 @@ public class Main {
 
         CefAppBuilder builder = new CefAppBuilder();
         builder.setInstallDir(Util.getAppDataDir().resolve("jcef-bundle").toFile());
-        builder.getCefSettings().windowless_rendering_enabled = false;
+        builder.getCefSettings().windowless_rendering_enabled = true;
         builder.getCefSettings().cache_path = Util.getAppDataDir().resolve("cache").toString();
         builder.setAppHandler(new MavenCefAppHandlerAdapter() {
             @Override
@@ -39,11 +45,11 @@ public class Main {
         });
         CefApp app = builder.build();
         CefClient client = app.createClient();
-        CefBrowser browser = client.createBrowser(devMode ? DEV_URL : PRODUCTION_URL, false, false);
+        Function<JFrame, CefBrowser> browserFactory = parent -> new Browser(client, devMode ? DEV_URL : PRODUCTION_URL, null, new CefBrowserSettings(), parent);
         CefMessageRouter messageRouter = CefMessageRouter.create();
         MinecraftDownloader downloader = new MinecraftDownloader(Util.getAppDataDir());
         messageRouter.addHandler(new EventHandler(downloader), true);
         client.addMessageRouter(messageRouter);
-        new MainFrame(browser, devMode);
+        new MainFrame(browserFactory, devMode);
     }
 }
