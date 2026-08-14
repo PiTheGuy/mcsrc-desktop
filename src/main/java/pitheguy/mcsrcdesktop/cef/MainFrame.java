@@ -11,7 +11,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class MainFrame extends JFrame {
-    public MainFrame(Function<JFrame, CefBrowser> browserFactory, boolean devMode) {
+    public MainFrame(Function<Dimension, CefBrowser> browserFactory, boolean devMode) {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1280, 720);
         setExtendedState(getExtendedState() | JFrame.MAXIMIZED_BOTH);
@@ -25,7 +25,7 @@ public class MainFrame extends JFrame {
         });
         setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icon.png")));
         setVisible(true);
-        CefBrowser browser = browserFactory.apply(this);
+        CefBrowser browser = browserFactory.apply(getSize());
         if (devMode) {
             JButton devToolsBtn = new JButton("DevTools");
             devToolsBtn.addActionListener(_ -> browser.openDevTools());

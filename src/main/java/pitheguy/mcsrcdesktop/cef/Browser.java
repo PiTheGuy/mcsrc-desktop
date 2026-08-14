@@ -26,7 +26,7 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
     private final List<Consumer<CefPaintEvent>> paintListeners = new ArrayList<>();
     private BufferedImage image;
 
-    public Browser(CefClient client, String url, CefRequestContext context, CefBrowserSettings settings, JFrame parent) {
+    public Browser(CefClient client, String url, CefRequestContext context, CefBrowserSettings settings, Dimension canvasSize) {
         super(client, url, context, settings);
         canvas.setFocusable(true);
         canvas.addComponentListener(new ComponentAdapter() {
@@ -109,15 +109,24 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
                 setFocus(false);
             }
         });
-        if (parent != null) {
-            canvas.setSize(parent.getSize());
-        }
+        canvas.setSize(canvasSize);
         createBrowser(client, 0, url, true, false, canvas, context);
     }
 
     @Override
     protected CefBrowserWindowless createDevToolsBrowserWindowless(CefClient client, String url, CefRequestContext context, CefBrowserWindowless parent, Point inspectAt) {
-        return new Browser(client, url, context, new CefBrowserSettings(), null); // TODO pass a proper parent
+        Browser devTools = new Browser(client, url, context, new CefBrowserSettings(), new Dimension(900, 600));
+
+        SwingUtilities.invokeLater(() -> {
+            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(canvas), "DevTools", false);
+            dialog.setSize(900, 600);
+            dialog.setLocationRelativeTo(canvas);
+            dialog.getContentPane().add(devTools.getUIComponent());
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            dialog.setVisible(true);
+        });
+
+        return devTools;
     }
 
     @Override

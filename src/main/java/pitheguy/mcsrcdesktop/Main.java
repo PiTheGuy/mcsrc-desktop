@@ -18,6 +18,7 @@ import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.util.Util;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.function.Function;
 
 public class Main {
@@ -45,7 +46,7 @@ public class Main {
         });
         CefApp app = builder.build();
         CefClient client = app.createClient();
-        Function<JFrame, CefBrowser> browserFactory = parent -> new Browser(client, devMode ? DEV_URL : PRODUCTION_URL, null, new CefBrowserSettings(), parent);
+        Function<Dimension, CefBrowser> browserFactory = canvasSize -> new Browser(client, devMode ? DEV_URL : PRODUCTION_URL, null, new CefBrowserSettings(), canvasSize);
         CefMessageRouter messageRouter = CefMessageRouter.create();
         MinecraftDownloader downloader = new MinecraftDownloader(Util.getAppDataDir());
         messageRouter.addHandler(new EventHandler(downloader), true);
