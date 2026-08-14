@@ -32,5 +32,6 @@ public class MainFrame extends JFrame {
             getContentPane().add(devToolsBtn, BorderLayout.NORTH);
         }
         getContentPane().add(browser.getUIComponent());
+        revalidate();
     }
 }
