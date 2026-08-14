@@ -204,7 +204,8 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
 
     @Override
     public boolean onCursorChange(CefBrowser browser, int cursorType) {
-        return false;
+        canvas.setCursor(Cursor.getPredefinedCursor(cursorType));
+        return true;
     }
 
     @Override
