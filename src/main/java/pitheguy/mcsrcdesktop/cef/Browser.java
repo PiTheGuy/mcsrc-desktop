@@ -73,7 +73,10 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
 
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
-                sendMouseEvent(e);
+                e.consume();
+                MouseWheelEvent event = new MouseWheelEvent(canvas, e.getID(), e.getWhen(), e.getModifiersEx(), e.getX(),
+                        e.getY(), e.getClickCount(), e.isPopupTrigger(), e.getScrollType(), -e.getScrollAmount() * 25, e.getWheelRotation());
+                sendMouseWheelEvent(event);
             }
         };
         canvas.addMouseListener(mouse);
