@@ -26,9 +26,10 @@ public class Main {
         OptionParser parser = new OptionParser();
         parser.accepts("help", "Show help").forHelp();
         OptionSpec<Void> devOpt = parser.accepts("dev", "Run in development mode");
+        OptionSpec<Void> windowlessOpt = parser.accepts("windowless", "Use windowless rendering");
         OptionSet options = parser.parse(args);
         boolean devMode = options.has(devOpt);
-        boolean useWindowlessRendering = OS.isLinux(); // Use windowless rendering on Linux to avoid windowing issues
+        boolean useWindowlessRendering = options.has(windowlessOpt) || OS.isLinux(); // Use windowless rendering on Linux to avoid windowing issues
         CefAppBuilder builder = new CefAppBuilder();
         builder.setInstallDir(Util.getAppDataDir().resolve("jcef-bundle").toFile());
         builder.getCefSettings().windowless_rendering_enabled = useWindowlessRendering;
