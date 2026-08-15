@@ -28,6 +28,10 @@ public class Main {
         OptionSpec<Void> devOpt = parser.accepts("dev", "Run in development mode");
         OptionSpec<Void> windowlessOpt = parser.accepts("windowless", "Use windowless rendering");
         OptionSet options = parser.parse(args);
+        if (options.has("help")) {
+            parser.printHelpOn(System.out);
+            return;
+        }
         boolean devMode = options.has(devOpt);
         boolean useWindowlessRendering = options.has(windowlessOpt) || OS.isLinux(); // Use windowless rendering on Linux to avoid windowing issues
         CefAppBuilder builder = new CefAppBuilder();
