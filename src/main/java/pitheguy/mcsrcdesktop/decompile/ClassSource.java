@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class ClassSource implements IContextSource {
@@ -33,16 +34,27 @@ public class ClassSource implements IContextSource {
 
     @Override
     public Entries getEntries() {
-        return new Entries(List.of(Entry.parse(className)), List.of(), List.of());
+        List<Entry> classes = zipFile.stream()
+                .filter(zipEntry -> !zipEntry.isDirectory())
+                .map(ZipEntry::getName)
+                .filter(name -> name.endsWith(".class"))
+                .filter(this::isOwn)
+                .map(name -> Entry.parse(name.substring(0, name.length() - CLASS_SUFFIX.length())))
+                .toList();
+        return new Entries(classes, List.of(), List.of());
     }
 
     @Override
     public InputStream getInputStream(String resource) throws IOException {
-        if (resource.equals(this.className + CLASS_SUFFIX)) {
+        if (isOwn(resource)) {
             return zipFile.getInputStream(zipFile.getEntry(resource));
         } else {
             return null;
         }
+    }
+
+    private boolean isOwn(String className) {
+        return className.equals(this.className + CLASS_SUFFIX) || className.startsWith(this.className + "$");
     }
 
     public long crc32() {
