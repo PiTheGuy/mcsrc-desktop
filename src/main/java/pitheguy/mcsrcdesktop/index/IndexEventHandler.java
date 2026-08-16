@@ -6,6 +6,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import mcsrc.ClassData;
 import mcsrc.MemberData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cef.callback.CefQueryCallback;
 import pitheguy.mcsrcdesktop.cef.ProgressUpdater;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
@@ -17,6 +19,7 @@ import java.io.IOException;
 import java.util.Set;
 
 public class IndexEventHandler {
+    private static final Logger LOGGER = LogManager.getLogger();
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(ClassData.class, ExtraTypeAdapters.CLASS_DATA)
             .registerTypeAdapter(MemberData.class, ExtraTypeAdapters.MEMBER_DATA)
@@ -50,7 +53,7 @@ public class IndexEventHandler {
         indexer.index(progressUpdater)
                 .thenRun(() -> progressUpdater.finish(null))
                 .exceptionally(e -> {
-                    e.printStackTrace();
+                    LOGGER.error("Failed to index version {}", version, e);
                     callback.failure(-2, "Indexing failed: " + e.getMessage());
                     return null;
                 });

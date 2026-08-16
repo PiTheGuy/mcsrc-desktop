@@ -3,6 +3,8 @@ package pitheguy.mcsrcdesktop.download;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 import pitheguy.mcsrcdesktop.util.ProgressListener;
 
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class MinecraftDownloader {
+    private static final Logger LOGGER = LogManager.getLogger();
     public static final String MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
@@ -76,7 +79,7 @@ public class MinecraftDownloader {
             return CompletableFuture.completedFuture(path.toFile());
         }
         String url = download.url();
-        System.out.println("Downloading " + fileName + " (" + download.size() + " bytes)");
+        LOGGER.info("Downloading {} ({} bytes)", fileName, download.size());
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
 
 
@@ -168,7 +171,7 @@ public class MinecraftDownloader {
             return CompletableFuture.completedFuture(path.toFile());
         }
         Files.createDirectories(path.getParent());
-        System.out.println("Downloading " + path.getFileName() + " (" + size + " bytes)");
+        LOGGER.info("Downloading {} ({} bytes)", path.getFileName(), size);
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
         return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofFile(path))
                 .thenApply(response -> response.body().toFile());

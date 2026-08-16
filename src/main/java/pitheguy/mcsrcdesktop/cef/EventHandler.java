@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
 import org.cef.callback.CefQueryCallback;
@@ -27,6 +29,7 @@ import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 
 public class EventHandler extends CefMessageRouterHandlerAdapter {
+    private static final Logger LOGGER = LogManager.getLogger();
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
             .create();
@@ -42,7 +45,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
 
     @Override
     public boolean onQuery(CefBrowser browser, CefFrame frame, long queryId, String request, boolean persistent, CefQueryCallback callback) {
-        System.out.println("Received query: " + request);
+        LOGGER.debug("Received query: {}", request);
         JsonObject requestJson = JsonParser.parseString(request).getAsJsonObject();
         switch (requestJson.get("action").getAsString()) {
             case "version" -> handleVersion(requestJson, callback);
@@ -99,7 +102,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
                 }
             });
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to download version {}", request.get("version").getAsString(), e);
             callback.failure(-2, "Fetch failed: " + e.getMessage());
         }
     }
@@ -113,7 +116,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             DecompileResult result = decompiler.decompile(className, options);
             callback.success(GSON.toJson(result));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to decompile {}", className, e);
             callback.failure(-2, "Decompile failed: " + e.getMessage());
         }
     }
@@ -126,7 +129,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             DecompileResult result = decompiler.getBytecode(className);
             callback.success(GSON.toJson(result));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to get bytecode for {}", className, e);
             callback.failure(-2, "Bytecode retrieval failed: " + e.getMessage());
         }
     }
@@ -135,7 +138,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
         try {
             indexHandler.handleEvent(request, callback);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Indexing failed", e);
             callback.failure(-2, "Index failed: " + e.getMessage());
         }
     }
@@ -153,7 +156,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             progressUpdater.finish(url);
             progressUpdater.finish(null);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to remap version {}", version, e);
             callback.failure(-2, "Remap failed: " + e.getMessage());
         }
     }

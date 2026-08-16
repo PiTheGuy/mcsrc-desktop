@@ -21,6 +21,7 @@ dependencies {
     implementation libs.guava
     implementation libs.mcsrc
     implementation libs.jopt
+    implementation libs.log4j
 }
 
 java {
