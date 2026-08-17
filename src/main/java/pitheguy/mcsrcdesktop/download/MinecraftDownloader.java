@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class MinecraftDownloader {
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger(MinecraftDownloader.class);
     public static final String MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)

@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.Set;
 
 public class IndexEventHandler {
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger(IndexEventHandler.class);
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(ClassData.class, ExtraTypeAdapters.CLASS_DATA)
             .registerTypeAdapter(MemberData.class, ExtraTypeAdapters.MEMBER_DATA)

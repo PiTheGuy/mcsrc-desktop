@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DownloadTracker {
-    public static final Logger LOGGER = LogManager.getLogger();
+    public static final Logger LOGGER = LogManager.getLogger(DownloadTracker.class);
     private final List<Download> downloads = new ArrayList<>();
     private int totalSize = 0;
     private final AtomicInteger downloaded = new AtomicInteger(0);

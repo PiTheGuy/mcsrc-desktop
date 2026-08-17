@@ -30,7 +30,7 @@ import java.time.Instant;
 import java.util.Base64;
 
 public class EventHandler extends CefMessageRouterHandlerAdapter {
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger(EventHandler.class);
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
             .create();
