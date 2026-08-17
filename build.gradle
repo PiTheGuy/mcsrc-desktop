@@ -7,7 +7,7 @@ plugins {
 group = 'pitheguy'
 
 // Don't forget to update the constant in SharedConstants when bumping versions!
-version = '1.0.1'
+version = '1.0.2'
 
 repositories {
     mavenCentral()
