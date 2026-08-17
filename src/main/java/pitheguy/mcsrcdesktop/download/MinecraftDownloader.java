@@ -70,48 +70,6 @@ public class MinecraftDownloader {
         return path.toFile();
     }
 
-    public CompletableFuture<File> downloadJar(VersionInfo versionInfo, ProgressListener progressListener) throws IOException {
-        String fileName = versionInfo.id() + ".jar";
-        Path path = dataDir.resolve("versions").resolve(fileName);
-        Files.createDirectories(path.getParent());
-        var download = versionInfo.downloads().client();
-        if (checkFileExists(path, download.sha1(), download.size())) {
-            return CompletableFuture.completedFuture(path.toFile());
-        }
-        String url = download.url();
-        LOGGER.info("Downloading {} ({} bytes)", fileName, download.size());
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
-
-
-        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
-                .thenApply(response -> {
-                    long contentLength = response.headers()
-                            .firstValueAsLong("Content-Length")
-                            .orElse(-1L);
-
-                    try (InputStream in = response.body();
-                         OutputStream out = Files.newOutputStream(path)) {
-
-                        byte[] buffer = new byte[8192];
-                        long totalRead = 0;
-                        int read;
-
-                        while ((read = in.read(buffer)) != -1) {
-                            out.write(buffer, 0, read);
-                            totalRead += read;
-
-                            if (progressListener != null && contentLength > 0) {
-                                progressListener.update((double) totalRead / contentLength);
-                            }
-                        }
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-
-                    return path.toFile();
-                });
-    }
-
     public File fetchMappings(VersionInfo versionInfo) {
         if (versionInfo.downloads().clientMappings() == null) return null;
         String fileName = versionInfo.id() + ".txt";
@@ -119,15 +77,6 @@ public class MinecraftDownloader {
         return path.toFile();
     }
 
-    public CompletableFuture<File> downloadMappings(VersionInfo versionInfo) throws IOException {
-        if (versionInfo.downloads().clientMappings() == null) return CompletableFuture.completedFuture(null);
-        String fileName = versionInfo.id() + ".txt";
-        Path path = dataDir.resolve("mappings").resolve(fileName);
-        VersionInfo.VersionDownloads.Download download = versionInfo.downloads().clientMappings();
-        return downloadFile(download.url(), path, download.sha1(), download.size());
-    }
-
-    //TODO merge library downloads with jar downloads
     public List<File> fetchLibraries(VersionInfo versionInfo) {
         Path librariesDir = dataDir.resolve("libraries");
         List<File> libraries = new ArrayList<>();
@@ -139,42 +88,53 @@ public class MinecraftDownloader {
         return libraries;
     }
 
-    public CompletableFuture<List<File>> downloadLibraries(VersionInfo versionInfo) throws IOException {
-        Path librariesDir = dataDir.resolve("libraries");
-        List<CompletableFuture<File>> pathFutures = new ArrayList<>();
-        for (VersionInfo.Library library : versionInfo.libraries()) {
-            if (library.matchesRules()) {
-                Path path = librariesDir.resolve(library.downloads().artifact().path());
-                var artifact = library.downloads().artifact();
-                var future = downloadFile(artifact.url(), path, artifact.sha1(), artifact.size());
-                pathFutures.add(future);
-            }
+    public CompletableFuture<DownloadInfo> downloadVersion(VersionInfo versionInfo, ProgressListener progressListener) throws IOException {
+        DownloadTracker tracker = new DownloadTracker();
+        Path jarPath = fetchJar(versionInfo).toPath();
+        var jarDownload = versionInfo.downloads().client();
+        var jarFuture = downloadFile(jarDownload.url(), jarPath, jarDownload.sha1(), jarDownload.size());
+        tracker.addDownload(jarFuture, jarPath, jarDownload.size());
+        CompletableFuture<InputStream> mappingsFuture;
+        if (versionInfo.downloads().clientMappings() != null) {
+            Path mappingsPath = fetchMappings(versionInfo).toPath();
+            var mappingsDownload = versionInfo.downloads().clientMappings();
+            mappingsFuture = downloadFile(mappingsDownload.url(), mappingsPath, mappingsDownload.sha1(), mappingsDownload.size());
+            tracker.addDownload(mappingsFuture, mappingsPath, mappingsDownload.size());
+        } else {
+            mappingsFuture = CompletableFuture.completedFuture(null);
         }
-        return CompletableFuture.allOf(pathFutures.toArray(CompletableFuture[]::new))
-                .thenApply(_ -> pathFutures.stream().map(CompletableFuture::join).toList());
+        List<CompletableFuture<InputStream>> libraryFutures = new ArrayList<>();
+        for (VersionInfo.Library library : versionInfo.libraries()) {
+            if (!library.matchesRules()) continue;
+            var libraryDownload = library.downloads().artifact();
+            Path libraryPath = dataDir.resolve("libraries").resolve(libraryDownload.path());
+            var libraryFuture = downloadFile(libraryDownload.url(), libraryPath, libraryDownload.sha1(), libraryDownload.size());
+            tracker.addDownload(libraryFuture, libraryPath, libraryDownload.size());
+            libraryFutures.add(libraryFuture);
+        }
+        var librariesFuture = CompletableFuture.allOf(libraryFutures.toArray(CompletableFuture[]::new))
+                .thenApply(_ -> libraryFutures.stream().map(CompletableFuture::join).toList());
+        tracker.start(progressListener);
+        return CompletableFuture.allOf(jarFuture, mappingsFuture, librariesFuture)
+                .thenApply(_ -> new DownloadInfo(fetchJar(versionInfo), fetchMappings(versionInfo), fetchLibraries(versionInfo)));
     }
 
-    private static boolean checkFileExists(Path path, String sha1, int size) throws IOException {
+    private static CompletableFuture<InputStream> downloadFile(String url, Path path, String sha1, int size) throws IOException {
         if (Files.exists(path)) {
             String fileHash = Hashing.sha1().hashBytes(Files.readAllBytes(path)).toString();
             if (Files.size(path) == size && fileHash.equals(sha1)) {
-                return true;
+                return CompletableFuture.completedFuture(InputStream.nullInputStream());
             } else {
+                LOGGER.warn("File {} already exists, but hash does not match. Deleting.", path.getFileName());
                 Files.delete(path);
             }
-        }
-        return false;
-    }
-
-    private static CompletableFuture<File> downloadFile(String url, Path path, String sha1, int size) throws IOException {
-        if (checkFileExists(path, sha1, size)) {
-            return CompletableFuture.completedFuture(path.toFile());
         }
         Files.createDirectories(path.getParent());
         LOGGER.info("Downloading {} ({} bytes)", path.getFileName(), size);
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
-        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofFile(path))
-                .thenApply(response -> response.body().toFile());
+        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
+                .thenApply(HttpResponse::body);
+
     }
 
 }

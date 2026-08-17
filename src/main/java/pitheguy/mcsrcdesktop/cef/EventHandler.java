@@ -22,11 +22,12 @@ import pitheguy.mcsrcdesktop.util.SharedConstants;
 
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.concurrent.CompletableFuture;
 
 public class EventHandler extends CefMessageRouterHandlerAdapter {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -84,21 +85,19 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             String version = request.get("version").getAsString();
             VersionInfo versionInfo = downloader.fetchVersionInfo(version);
             ProgressUpdater progressUpdater = new ProgressUpdater(callback);
-            var jarFuture = downloader.downloadJar(versionInfo, progressUpdater);
-            var mappingsFuture = downloader.downloadMappings(versionInfo);
-            var librariesFuture = downloader.downloadLibraries(versionInfo);
-            CompletableFuture.allOf(jarFuture, mappingsFuture, librariesFuture).thenRun(() -> {
+            var future = downloader.downloadVersion(versionInfo, progressUpdater);
+            future.thenAccept(downloadInfo -> {
                 try {
                     JsonObject response = new JsonObject();
-                    String jarUrl = "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(jarFuture.get().toPath()));
+                    String jarUrl = "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(downloadInfo.jar().toPath()));
                     response.addProperty("jar", jarUrl);
-                    if (mappingsFuture.get() != null) {
-                        String mappingsUrl = "data:text/plain;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(mappingsFuture.get().toPath()));
+                    if (downloadInfo.mappings() != null) {
+                        String mappingsUrl = "data:text/plain;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(downloadInfo.mappings().toPath()));
                         response.addProperty("mappings", mappingsUrl);
                     }
                     progressUpdater.finish(response);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
                 }
             });
         } catch (Exception e) {
@@ -154,7 +153,6 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
             File remappedJar = remapper.remap(progressUpdater);
             String url = "data:application/java-archive;base64," + Base64.getEncoder().encodeToString(Files.readAllBytes(remappedJar.toPath()));
             progressUpdater.finish(url);
-            progressUpdater.finish(null);
         } catch (Exception e) {
             LOGGER.error("Failed to remap version {}", version, e);
             callback.failure(-2, "Remap failed: " + e.getMessage());
