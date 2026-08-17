@@ -123,7 +123,7 @@ public class MinecraftDownloader {
         if (Files.exists(path)) {
             String fileHash = Hashing.sha1().hashBytes(Files.readAllBytes(path)).toString();
             if (Files.size(path) == size && fileHash.equals(sha1)) {
-                return CompletableFuture.completedFuture(InputStream.nullInputStream());
+                return CompletableFuture.completedFuture(null);
             } else {
                 LOGGER.warn("File {} already exists, but hash does not match. Deleting.", path.getFileName());
                 Files.delete(path);
