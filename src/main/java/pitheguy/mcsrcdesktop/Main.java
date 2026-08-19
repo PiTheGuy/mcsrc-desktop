@@ -61,12 +61,18 @@ public class Main {
         CefApp app = builder.build();
         CefClient client = app.createClient();
         Function<Dimension, CefBrowser> windowedBrowserFactory = _ -> client.createBrowser(devMode ? DEV_URL : PRODUCTION_URL, false, false);
-        Function<Dimension, CefBrowser> windowlessBrowserFactory = canvasSize -> new Browser(client, devMode ? DEV_URL : PRODUCTION_URL, null, new CefBrowserSettings(), canvasSize);
+        Function<Dimension, CefBrowser> windowlessBrowserFactory = canvasSize -> new Browser(client, devMode ? DEV_URL : PRODUCTION_URL, null, createBrowserSettings(), canvasSize);
         CefMessageRouter messageRouter = CefMessageRouter.create();
         MinecraftDownloader downloader = new MinecraftDownloader(Util.getAppDataDir());
         messageRouter.addHandler(new EventHandler(downloader), true);
         client.addMessageRouter(messageRouter);
         new MainFrame(useWindowlessRendering ? windowlessBrowserFactory : windowedBrowserFactory, devMode);
+    }
+
+    CefBrowserSettings createBrowserSettings() {
+        CefBrowserSettings settings = new CefBrowserSettings();
+        settings.windowless_frame_rate = 60;
+        return settings;
     }
 
     void setupLogging() {
