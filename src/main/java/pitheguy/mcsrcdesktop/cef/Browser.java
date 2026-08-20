@@ -11,9 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.awt.image.DataBufferInt;
-import java.awt.image.WritableRaster;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +39,7 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
         MouseAdapter mouse = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                canvas.requestFocusInWindow();
                 sendMouseEvent(e);
             }
 
@@ -173,10 +172,7 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
 
     private BufferedImage createNewFrame(int width, int height) {
         if (image == null || width != image.getWidth() || height != image.getHeight()) return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        ColorModel cm = image.getColorModel();
-        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
-        WritableRaster raster = image.copyData(image.getRaster().createCompatibleWritableRaster());
-        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+        else return image;
     }
 
     @Override
