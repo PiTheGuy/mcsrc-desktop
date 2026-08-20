@@ -97,12 +97,13 @@ public class EventHandler extends CefMessageRouterHandlerAdapter {
                     }
                     progressUpdater.finish(response);
                 } catch (IOException e) {
+                    LOGGER.error("Failed to read downloaded file", e);
                     throw new UncheckedIOException(e);
                 }
             });
         } catch (Exception e) {
             LOGGER.error("Failed to download version {}", request.get("version").getAsString(), e);
-            callback.failure(-2, "Fetch failed: " + e.getMessage());
+            callback.failure(-2, "Download failed: " + e.getMessage());
         }
     }
 

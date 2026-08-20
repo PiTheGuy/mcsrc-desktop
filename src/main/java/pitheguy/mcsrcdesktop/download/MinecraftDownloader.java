@@ -1,10 +1,7 @@
 package pitheguy.mcsrcdesktop.download;
 
-import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 import pitheguy.mcsrcdesktop.util.ProgressListener;
 
@@ -13,7 +10,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -23,7 +19,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class MinecraftDownloader {
-    private static final Logger LOGGER = LogManager.getLogger(MinecraftDownloader.class);
     public static final String MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
@@ -91,50 +86,27 @@ public class MinecraftDownloader {
     public CompletableFuture<DownloadInfo> downloadVersion(VersionInfo versionInfo, ProgressListener progressListener) throws IOException {
         DownloadTracker tracker = new DownloadTracker();
         Path jarPath = fetchJar(versionInfo).toPath();
-        var jarDownload = versionInfo.downloads().client();
-        var jarFuture = downloadFile(jarDownload.url(), jarPath, jarDownload.sha1(), jarDownload.size());
-        tracker.addDownload(jarFuture, jarPath, jarDownload.size());
-        CompletableFuture<InputStream> mappingsFuture;
+        var jarDownloadInfo = versionInfo.downloads().client();
+        FileDownload jarDownload = new FileDownload(jarDownloadInfo.url(), jarPath, jarDownloadInfo.sha1(), jarDownloadInfo.size());
+        jarDownload.fetch(HTTP_CLIENT);
+        tracker.addDownload(jarDownload);
         if (versionInfo.downloads().clientMappings() != null) {
             Path mappingsPath = fetchMappings(versionInfo).toPath();
-            var mappingsDownload = versionInfo.downloads().clientMappings();
-            mappingsFuture = downloadFile(mappingsDownload.url(), mappingsPath, mappingsDownload.sha1(), mappingsDownload.size());
-            tracker.addDownload(mappingsFuture, mappingsPath, mappingsDownload.size());
-        } else {
-            mappingsFuture = CompletableFuture.completedFuture(null);
+            var mappingsDownloadInfo = versionInfo.downloads().clientMappings();
+            FileDownload mappingsDownload = new FileDownload(mappingsDownloadInfo.url(), mappingsPath, mappingsDownloadInfo.sha1(), mappingsDownloadInfo.size());
+            mappingsDownload.fetch(HTTP_CLIENT);
+            tracker.addDownload(mappingsDownload);
         }
-        List<CompletableFuture<InputStream>> libraryFutures = new ArrayList<>();
         for (VersionInfo.Library library : versionInfo.libraries()) {
             if (!library.matchesRules()) continue;
-            var libraryDownload = library.downloads().artifact();
-            Path libraryPath = dataDir.resolve("libraries").resolve(libraryDownload.path());
-            var libraryFuture = downloadFile(libraryDownload.url(), libraryPath, libraryDownload.sha1(), libraryDownload.size());
-            tracker.addDownload(libraryFuture, libraryPath, libraryDownload.size());
-            libraryFutures.add(libraryFuture);
+            var libraryDownloadInfo = library.downloads().artifact();
+            Path libraryPath = dataDir.resolve("libraries").resolve(libraryDownloadInfo.path());
+            FileDownload libraryDownload = new FileDownload(libraryDownloadInfo.url(), libraryPath, libraryDownloadInfo.sha1(), libraryDownloadInfo.size());
+            libraryDownload.fetch(HTTP_CLIENT);
+            tracker.addDownload(libraryDownload);
         }
-        var librariesFuture = CompletableFuture.allOf(libraryFutures.toArray(CompletableFuture[]::new))
-                .thenApply(_ -> libraryFutures.stream().map(CompletableFuture::join).toList());
         tracker.start(progressListener);
-        return CompletableFuture.allOf(jarFuture, mappingsFuture, librariesFuture)
-                .thenApply(_ -> new DownloadInfo(fetchJar(versionInfo), fetchMappings(versionInfo), fetchLibraries(versionInfo)));
-    }
-
-    private static CompletableFuture<InputStream> downloadFile(String url, Path path, String sha1, int size) throws IOException {
-        if (Files.exists(path)) {
-            String fileHash = Hashing.sha1().hashBytes(Files.readAllBytes(path)).toString();
-            if (Files.size(path) == size && fileHash.equals(sha1)) {
-                return CompletableFuture.completedFuture(null);
-            } else {
-                LOGGER.warn("File {} already exists, but hash does not match. Deleting.", path.getFileName());
-                Files.delete(path);
-            }
-        }
-        Files.createDirectories(path.getParent());
-        LOGGER.info("Downloading {} ({} bytes)", path.getFileName(), size);
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
-        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
-                .thenApply(HttpResponse::body);
-
+        return tracker.future().thenApply(_ -> new DownloadInfo(fetchJar(versionInfo), fetchMappings(versionInfo), fetchLibraries(versionInfo)));
     }
 
 }
