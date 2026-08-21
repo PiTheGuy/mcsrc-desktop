@@ -15,7 +15,7 @@ public record VersionQuery() implements CefQuery {
     }
 
     @Override
-    public void handle(CefQueryCallback callback) {
+    public void handle(CefQueryCallback callback, CefQueryContext context) {
         Version version = new Version(SharedConstants.PROTOCOL_VERSION, SharedConstants.APP_VERSION);
         callback.success(GSON.toJson(version));
     }

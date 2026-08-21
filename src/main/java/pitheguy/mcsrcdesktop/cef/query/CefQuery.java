@@ -10,7 +10,7 @@ public interface CefQuery {
 
     CefQueryType<? extends CefQuery> type();
 
-    void handle(CefQueryCallback callback);
+    void handle(CefQueryCallback callback, CefQueryContext context);
 
     static CefQuery deserialize(JsonObject json) {
         String typeId = json.get("action").getAsString(); // TODO change to type for protocol version 2
