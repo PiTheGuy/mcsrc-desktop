@@ -8,8 +8,12 @@ import org.jetbrains.java.decompiler.util.token.TextRange;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TokenCollector extends TextTokenVisitor {
+    private static final Pattern IMPORT_REGEX = Pattern.compile("^\\s*import\\s+(?!static\\b)([^\\s;]+)\\s*;", Pattern.MULTILINE);
+
     private String currentContent = null;
     private final List<Token> currentTokens = new ArrayList<>();
     private final Map<String, List<Token>> tokens;
@@ -19,11 +23,26 @@ public class TokenCollector extends TextTokenVisitor {
         this.tokens = tokens;
     }
 
+    private void addImportTokens() {
+        Matcher matcher = IMPORT_REGEX.matcher(currentContent);
+        while (matcher.find()) {
+            String importPath = matcher.group(1).replace(".","/");
+            if (importPath.endsWith("*")) {
+                continue;
+            }
+            String simpleName = importPath.substring(importPath.lastIndexOf('/') + 1);
+            int start = matcher.start() + matcher.group().lastIndexOf(simpleName);
+            int length = importPath.length() - importPath.lastIndexOf(simpleName);
+            currentTokens.add(new Token.NonMethodToken(start, length, importPath, false, Token.TokenType.CLASS));
+        }
+    }
+
     @Override
     public void start(String content) {
         super.start(content);
         currentContent = content;
         currentTokens.clear();
+        addImportTokens();
     }
 
     @Override
