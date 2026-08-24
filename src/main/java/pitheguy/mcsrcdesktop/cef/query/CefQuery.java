@@ -6,11 +6,19 @@ import org.cef.callback.CefQueryCallback;
 import java.util.Map;
 
 public interface CefQuery {
-    Map<String, CefQueryType<?>> TYPES = Map.of();
+    Map<String, CefQueryType<?>> TYPES = Map.of(
+            "version", VersionQuery.TYPE,
+            "update", UpdateQuery.TYPE,
+            "download", DownloadQuery.TYPE,
+            "decompile", DecompileQuery.TYPE,
+            "bytecode", BytecodeQuery.TYPE,
+            "index", IndexQuery.TYPE,
+            "remap", RemapQuery.TYPE
+    );
 
     CefQueryType<? extends CefQuery> type();
 
-    void handle(CefQueryCallback callback, CefQueryContext context);
+    void handle(CefQueryCallback callback, CefQueryContext context) throws Exception;
 
     static CefQuery deserialize(JsonObject json) {
         String typeId = json.get("action").getAsString(); // TODO change to type for protocol version 2

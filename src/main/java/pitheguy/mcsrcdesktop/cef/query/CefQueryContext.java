@@ -3,17 +3,10 @@ package pitheguy.mcsrcdesktop.cef.query;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.index.MinecraftIndexer;
 
-// TODO implement methods
-public class CefQueryContext {
-    public MinecraftDownloader downloader() {
-        return null;
-    }
+public interface CefQueryContext {
+    MinecraftDownloader downloader();
 
-    public MinecraftIndexer indexer() {
-        return null;
-    }
+    MinecraftIndexer indexer();
 
-    public void setIndexer(MinecraftIndexer indexer) {
-
-    }
+    void setIndexer(MinecraftIndexer indexer);
 }

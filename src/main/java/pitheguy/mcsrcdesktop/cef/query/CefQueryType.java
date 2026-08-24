@@ -1,15 +1,15 @@
 package pitheguy.mcsrcdesktop.cef.query;
 
-import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import java.util.function.Function;
 
 import static pitheguy.mcsrcdesktop.util.SharedConstants.GSON;
 
 public class CefQueryType<T extends CefQuery> {
-    private final Function<JsonElement, T> deserializer;
+    private final Function<JsonObject, T> deserializer;
 
-    private CefQueryType(Function<JsonElement, T> deserializer) {
+    private CefQueryType(Function<JsonObject, T> deserializer) {
         this.deserializer = deserializer;
     }
 
@@ -17,11 +17,11 @@ public class CefQueryType<T extends CefQuery> {
         return new CefQueryType<>(json -> GSON.fromJson(json, clazz));
     }
 
-    public static <T extends CefQuery> CefQueryType<T> of(Function<JsonElement, T> deserializer) {
+    public static <T extends CefQuery> CefQueryType<T> of(Function<JsonObject, T> deserializer) {
         return new CefQueryType<>(deserializer);
     }
 
-    public T deserialize(JsonElement json) {
+    public T deserialize(JsonObject json) {
         return deserializer.apply(json);
     }
 }
