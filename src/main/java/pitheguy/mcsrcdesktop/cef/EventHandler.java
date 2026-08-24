@@ -13,9 +13,6 @@ import pitheguy.mcsrcdesktop.cef.query.CefQueryContext;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.index.MinecraftIndexer;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 public class EventHandler extends CefMessageRouterHandlerAdapter implements CefQueryContext {
     private static final Logger LOGGER = LogManager.getLogger(EventHandler.class);
 
@@ -37,9 +34,7 @@ public class EventHandler extends CefMessageRouterHandlerAdapter implements CefQ
             query.handle(callback, this);
         } catch (Exception e) {
             LOGGER.error("Failed to handle query {}", query, e);
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-            callback.failure(-2, "Failed to handle query " + query + "\n" + sw);
+            callback.failure(-2, "Failed to handle query " + query + "\n" + e);
         }
         return true;
     }
