@@ -11,6 +11,7 @@ import org.cef.*;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefMessageRouter;
 import pitheguy.mcsrcdesktop.cef.Browser;
+import pitheguy.mcsrcdesktop.cef.BrowserKeyboardHandler;
 import pitheguy.mcsrcdesktop.cef.EventHandler;
 import pitheguy.mcsrcdesktop.cef.MainFrame;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
@@ -59,13 +60,14 @@ public class Main {
         });
         CefApp app = builder.build();
         CefClient client = app.createClient();
+        client.addKeyboardHandler(new BrowserKeyboardHandler());
         Function<Dimension, CefBrowser> windowedBrowserFactory = _ -> client.createBrowser(devMode ? DEV_URL : PRODUCTION_URL, false, false);
         Function<Dimension, CefBrowser> windowlessBrowserFactory = canvasSize -> new Browser(client, devMode ? DEV_URL : PRODUCTION_URL, null, createBrowserSettings(), canvasSize);
         CefMessageRouter messageRouter = CefMessageRouter.create();
         MinecraftDownloader downloader = new MinecraftDownloader(Util.getAppDataDir());
         messageRouter.addHandler(new EventHandler(downloader), true);
         client.addMessageRouter(messageRouter);
-        new MainFrame(useWindowlessRendering ? windowlessBrowserFactory : windowedBrowserFactory, devMode);
+        new MainFrame(useWindowlessRendering ? windowlessBrowserFactory : windowedBrowserFactory);
     }
 
     CefBrowserSettings createBrowserSettings() {
