@@ -1,28 +1,24 @@
 package pitheguy.mcsrcdesktop.download;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import pitheguy.mcsrcdesktop.util.ExtraTypeAdapters;
 import pitheguy.mcsrcdesktop.util.ProgressListener;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import static pitheguy.mcsrcdesktop.util.SharedConstants.GSON;
+
 public class MinecraftDownloader {
     public static final String MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
-    public static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
-            .create();
     public static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private final Path dataDir;
 

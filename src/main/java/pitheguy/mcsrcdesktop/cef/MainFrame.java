@@ -8,7 +8,6 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class MainFrame extends JFrame {
     public MainFrame(Function<Dimension, CefBrowser> browserFactory, boolean devMode) {

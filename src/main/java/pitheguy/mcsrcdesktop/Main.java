@@ -16,7 +16,6 @@ import pitheguy.mcsrcdesktop.cef.MainFrame;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.util.Util;
 
-import javax.swing.*;
 import java.awt.*;
 import java.util.function.Function;
 

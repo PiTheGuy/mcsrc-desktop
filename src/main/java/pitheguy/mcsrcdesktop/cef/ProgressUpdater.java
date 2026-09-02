@@ -1,15 +1,12 @@
 package pitheguy.mcsrcdesktop.cef;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import org.cef.callback.CefQueryCallback;
 import pitheguy.mcsrcdesktop.util.ProgressListener;
 
-public class ProgressUpdater implements ProgressListener {
-    public static final Gson GSON = new GsonBuilder()
-            .create();
+import static pitheguy.mcsrcdesktop.util.SharedConstants.GSON;
 
+public class ProgressUpdater implements ProgressListener {
     private final CefQueryCallback callback;
 
     public ProgressUpdater(CefQueryCallback callback) {

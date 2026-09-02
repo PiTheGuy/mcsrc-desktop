@@ -2,7 +2,10 @@ package pitheguy.mcsrcdesktop.cef;
 
 import org.cef.CefBrowserSettings;
 import org.cef.CefClient;
-import org.cef.browser.*;
+import org.cef.browser.CefBrowser;
+import org.cef.browser.CefBrowserWindowless;
+import org.cef.browser.CefPaintEvent;
+import org.cef.browser.CefRequestContext;
 import org.cef.callback.CefDragData;
 import org.cef.handler.CefRenderHandler;
 import org.cef.handler.CefScreenInfo;
@@ -171,7 +174,8 @@ public class Browser extends CefBrowserWindowless implements CefRenderHandler {
     }
 
     private BufferedImage createNewFrame(int width, int height) {
-        if (image == null || width != image.getWidth() || height != image.getHeight()) return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        if (image == null || width != image.getWidth() || height != image.getHeight())
+            return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         else return image;
     }
 
