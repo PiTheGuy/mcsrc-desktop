@@ -3,7 +3,7 @@ jcef = "146.0.10-jcefgithub.9"
 vineflower = "1.12.0"
 gson = "2.10.1"
 guava = "33.6.0-jre"
-mcsrc = "0.2.0"
+mcsrc = "0.3.0"
 jopt = "5.0.4"
 log4j = "2.26.1"
 

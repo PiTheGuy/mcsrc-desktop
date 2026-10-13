@@ -77,7 +77,11 @@ public class ExtraTypeAdapters {
         public JsonElement serialize(MemberData src, Type typeOfSrc, JsonSerializationContext context) {
             String methods = String.join(",", src.methods().stream().map(Entry.Method::str).toList());
             String fields = String.join(",", src.fields().stream().map(Entry.Field::str).toList());
-            String str = "%s|%s|%s".formatted(src.className(), methods, fields);
+            String access = String.join(",", src.methodAccess().entrySet().stream()
+                    .map(entry -> entry.getKey().str() + ":" + entry.getValue()).toList());
+            String bridges = String.join(",", src.methodBridges().entrySet().stream()
+                    .map(entry -> entry.getKey().str() + "=" + entry.getValue().str()).toList());
+            String str =  "%s|%s|%s|%s|%s".formatted(src.className(), methods, fields, access, bridges);
             return new JsonPrimitive(str);
         }
 
