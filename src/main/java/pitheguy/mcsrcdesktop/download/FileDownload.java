@@ -1,6 +1,5 @@
 package pitheguy.mcsrcdesktop.download;
 
-import com.google.common.hash.Hashing;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,16 +17,14 @@ public class FileDownload {
 
     private final String url;
     private final Path path;
-    private final String sha1;
     private final int size;
     private final boolean cached;
     private CompletableFuture<InputStream> future;
     private boolean cancelled = false;
 
-    public FileDownload(String url, Path path, String sha1, int size) throws IOException {
+    public FileDownload(String url, Path path, int size) throws IOException {
         this.url = url;
         this.path = path;
-        this.sha1 = sha1;
         this.size = size;
         this.cached = checkCache();
         Files.createDirectories(path.getParent());
@@ -77,11 +74,10 @@ public class FileDownload {
 
     private boolean checkCache() throws IOException {
         if (Files.exists(path)) {
-            String fileHash = Hashing.sha1().hashBytes(Files.readAllBytes(path)).toString();
-            if (Files.size(path) == size && fileHash.equals(sha1)) {
+            if (Files.size(path) == (long) size) {
                 return true;
             } else {
-                LOGGER.warn("File {} already exists, but hash does not match. Deleting.", path.getFileName());
+                LOGGER.warn("File {} has incorrect size. Deleting.", path.getFileName());
                 Files.delete(path);
             }
         }

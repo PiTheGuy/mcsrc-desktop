@@ -83,13 +83,13 @@ public class MinecraftDownloader {
         DownloadTracker tracker = new DownloadTracker();
         Path jarPath = fetchJar(versionInfo).toPath();
         var jarDownloadInfo = versionInfo.downloads().client();
-        FileDownload jarDownload = new FileDownload(jarDownloadInfo.url(), jarPath, jarDownloadInfo.sha1(), jarDownloadInfo.size());
+        FileDownload jarDownload = new FileDownload(jarDownloadInfo.url(), jarPath, jarDownloadInfo.size());
         jarDownload.fetch(HTTP_CLIENT);
         tracker.addDownload(jarDownload);
         if (versionInfo.downloads().clientMappings() != null) {
             Path mappingsPath = fetchMappings(versionInfo).toPath();
             var mappingsDownloadInfo = versionInfo.downloads().clientMappings();
-            FileDownload mappingsDownload = new FileDownload(mappingsDownloadInfo.url(), mappingsPath, mappingsDownloadInfo.sha1(), mappingsDownloadInfo.size());
+            FileDownload mappingsDownload = new FileDownload(mappingsDownloadInfo.url(), mappingsPath, mappingsDownloadInfo.size());
             mappingsDownload.fetch(HTTP_CLIENT);
             tracker.addDownload(mappingsDownload);
         }
@@ -97,7 +97,7 @@ public class MinecraftDownloader {
             if (!library.matchesRules()) continue;
             var libraryDownloadInfo = library.downloads().artifact();
             Path libraryPath = dataDir.resolve("libraries").resolve(libraryDownloadInfo.path());
-            FileDownload libraryDownload = new FileDownload(libraryDownloadInfo.url(), libraryPath, libraryDownloadInfo.sha1(), libraryDownloadInfo.size());
+            FileDownload libraryDownload = new FileDownload(libraryDownloadInfo.url(), libraryPath, libraryDownloadInfo.size());
             libraryDownload.fetch(HTTP_CLIENT);
             tracker.addDownload(libraryDownload);
         }
