@@ -21,7 +21,7 @@ public interface CefQuery {
     void handle(CefQueryCallback callback, CefQueryContext context) throws Exception;
 
     static CefQuery deserialize(JsonObject json) {
-        String typeId = json.get("action").getAsString(); // TODO change to type for protocol version 2
+        String typeId = json.get("type").getAsString();
         CefQueryType<?> type = TYPES.get(typeId);
         if (type == null) return null;
         return type.deserialize(json);

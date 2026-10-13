@@ -25,7 +25,7 @@ public interface IndexQuery extends CefQuery {
     }
 
     static IndexQuery deserialize(JsonObject json) {
-        Action action = GSON.fromJson(json.get("type"), Action.class); // TODO change to action for protocol version 2
+        Action action = GSON.fromJson(json.get("action"), Action.class);
         return GSON.fromJson(json, action.queryClass());
     }
 
