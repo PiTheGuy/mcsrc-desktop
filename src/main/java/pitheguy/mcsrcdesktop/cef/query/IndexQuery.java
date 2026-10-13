@@ -17,7 +17,7 @@ import static pitheguy.mcsrcdesktop.util.SharedConstants.GSON;
 
 public interface IndexQuery extends CefQuery {
     CefQueryType<IndexQuery> TYPE = CefQueryType.of(IndexQuery::deserialize);
-    Logger LOGGER = LogManager.getLogger();
+    Logger LOGGER = LogManager.getLogger(IndexQuery.class);
 
     @Override
     default CefQueryType<? extends CefQuery> type() {
