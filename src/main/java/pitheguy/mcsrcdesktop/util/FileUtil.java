@@ -10,4 +10,9 @@ public class FileUtil {
         byte[] bytes = Files.readAllBytes(file.toPath());
         return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
     }
+
+    public static String stripExtension(String fileName) {
+        if (fileName.lastIndexOf('.') < 0) return fileName;
+        return fileName.substring(0, fileName.lastIndexOf('.'));
+    }
 }

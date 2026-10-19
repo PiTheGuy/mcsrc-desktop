@@ -5,6 +5,8 @@ import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.extern.TextTokenVisitor;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.download.VersionInfo;
+import pitheguy.mcsrcdesktop.util.FileUtil;
+import pitheguy.mcsrcdesktop.util.SharedConstants;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,14 +59,14 @@ public class MinecraftDecompiler {
 
             String source = output.get(className);
             Token[] classTokens = tokens.get(source).toArray(Token[]::new);
-            DecompileResult result = new DecompileResult(className, classSource.crc32(), source, classTokens, DecompileResult.Language.JAVA);
+            DecompileResult result = new DecompileResult(className, FileUtil.stripExtension(jar.getName()), classSource.crc32(), source, classTokens, DecompileResult.Language.JAVA, SharedConstants.VINEFLOWER_VERSION);
             DecompilerCache.put(className, version, options, result);
             return result;
         } catch (Exception e) {
             StackTraceWriter sw = new StackTraceWriter();
             e.printStackTrace(new PrintWriter(sw));
             String message = "// Error during decompilation" + "\n" + sw;
-            return new DecompileResult(className, 0, message, new Token[0], DecompileResult.Language.JAVA);
+            return new DecompileResult(className, FileUtil.stripExtension(jar.getName()), 0, message, new Token[0], DecompileResult.Language.JAVA, SharedConstants.VINEFLOWER_VERSION);
         }
     }
 
@@ -74,12 +76,12 @@ public class MinecraftDecompiler {
             ZipEntry entry = zip.getEntry(className + ".class");
             byte[] bytes = zip.getInputStream(entry).readAllBytes();
             String result = BytecodePrinter.print(bytes);
-            return new DecompileResult(className, entry.getCrc(), result, new Token[0], DecompileResult.Language.BYTECODE);
+            return new DecompileResult(className, FileUtil.stripExtension(jar.getName()), entry.getCrc(), result, new Token[0], DecompileResult.Language.BYTECODE, SharedConstants.VINEFLOWER_VERSION);
         } catch (Exception e) {
             StackTraceWriter sw = new StackTraceWriter();
             e.printStackTrace(new PrintWriter(sw));
             String message = "// Error during bytecode retrieval" + "\n" + sw;
-            return new DecompileResult(className, 0, message, new Token[0], DecompileResult.Language.BYTECODE);
+            return new DecompileResult(className, FileUtil.stripExtension(jar.getName()), 0, message, new Token[0], DecompileResult.Language.BYTECODE, SharedConstants.VINEFLOWER_VERSION);
         }
     }
 

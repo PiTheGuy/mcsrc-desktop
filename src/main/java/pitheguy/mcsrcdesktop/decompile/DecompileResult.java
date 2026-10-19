@@ -5,6 +5,8 @@ import com.google.gson.annotations.SerializedName;
 public record DecompileResult(
         @SerializedName("className")
         String className,
+        @SerializedName("jarName")
+        String jarName,
         @SerializedName("checksum")
         long checksum,
         @SerializedName("source")
@@ -12,7 +14,9 @@ public record DecompileResult(
         @SerializedName("tokens")
         Token[] tokens,
         @SerializedName("language")
-        Language language
+        Language language,
+        @SerializedName("version")
+        String version
 ) {
     public enum Language {
         @SerializedName("java")
