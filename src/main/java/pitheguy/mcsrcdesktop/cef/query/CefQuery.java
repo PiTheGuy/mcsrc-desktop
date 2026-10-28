@@ -13,7 +13,8 @@ public interface CefQuery {
             "decompile", DecompileQuery.TYPE,
             "bytecode", BytecodeQuery.TYPE,
             "index", IndexQuery.TYPE,
-            "remap", RemapQuery.TYPE
+            "remap", RemapQuery.TYPE,
+            "javadoc", JavadocQuery.TYPE
     );
 
     CefQueryType<? extends CefQuery> type();

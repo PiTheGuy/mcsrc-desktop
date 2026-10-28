@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import mcsrc.ClassData;
 import mcsrc.MemberData;
+import net.fabricmc.mappingio.format.MappingFormat;
 
 import java.time.Instant;
 
@@ -15,5 +16,6 @@ public class SharedConstants {
             .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
             .registerTypeAdapter(ClassData.class, ExtraTypeAdapters.CLASS_DATA)
             .registerTypeAdapter(MemberData.class, ExtraTypeAdapters.MEMBER_DATA)
+            .registerTypeAdapter(MappingFormat.class, ExtraTypeAdapters.MAPPING_FORMAT)
             .create();
 }

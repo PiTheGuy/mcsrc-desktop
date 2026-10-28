@@ -4,6 +4,7 @@ import com.google.gson.*;
 import mcsrc.ClassData;
 import mcsrc.Entry;
 import mcsrc.MemberData;
+import net.fabricmc.mappingio.format.MappingFormat;
 
 import java.lang.reflect.Type;
 import java.time.Instant;
@@ -16,6 +17,7 @@ public class ExtraTypeAdapters {
     public static Object INSTANT = new InstantAdapter();
     public static Object CLASS_DATA = new ClassDataAdapter();
     public static Object MEMBER_DATA = new MemberDataAdapter();
+    public static Object MAPPING_FORMAT = new MappingFormatAdapter();
 
     private static class InstantAdapter implements JsonSerializer<Instant>, JsonDeserializer<Instant> {
         @Override
@@ -93,6 +95,26 @@ public class ExtraTypeAdapters {
         private static Entry.Field parseField(String value) {
             String[] parts = value.split(":", 3);
             return new Entry.Field(parts[0], parts[1], parts[2]);
+        }
+    }
+
+    private static class MappingFormatAdapter implements JsonSerializer<MappingFormat>, JsonDeserializer<MappingFormat> {
+        @Override
+        public MappingFormat deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            return switch (json.getAsString()) {
+                case "tiny2" -> MappingFormat.TINY_2_FILE;
+                case "enigma" -> MappingFormat.ENIGMA_FILE;
+                default -> throw new IllegalStateException("Unsupported mapping format: " + json.getAsString());
+            };
+        }
+
+        @Override
+        public JsonElement serialize(MappingFormat src, Type typeOfSrc, JsonSerializationContext context) {
+            return switch (src) {
+                case TINY_2_FILE -> new JsonPrimitive("tiny2");
+                case ENIGMA_FILE -> new JsonPrimitive("enigma");
+                default -> throw new IllegalStateException("Unsupported mapping format: " + src);
+            };
         }
     }
 }
