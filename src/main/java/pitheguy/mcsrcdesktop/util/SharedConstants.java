@@ -9,7 +9,7 @@ import java.time.Instant;
 
 public class SharedConstants {
     public static final int PROTOCOL_VERSION = 2;
-    public static final String APP_VERSION = "1.1.2";
+    public static final String APP_VERSION = "1.2.0";
     public static final String VINEFLOWER_VERSION = "1.12.0";
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
