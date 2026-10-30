@@ -2,7 +2,7 @@ package pitheguy.mcsrcdesktop.decompile;
 
 import com.google.gson.annotations.SerializedName;
 
-public sealed interface Token permits Token.MemberToken, Token.NonMethodToken {
+public sealed interface Token permits Token.MemberToken, Token.NonMethodToken, Token.ParameterToken {
     int start();
     int length();
     String className();
@@ -49,5 +49,26 @@ public sealed interface Token permits Token.MemberToken, Token.NonMethodToken {
             boolean declaration,
             @SerializedName("type")
             TokenType type
+    ) implements Token {}
+
+    record ParameterToken(
+            @SerializedName("start")
+            int start,
+            @SerializedName("length")
+            int length,
+            @SerializedName("className")
+            String className,
+            @SerializedName("declaration")
+            boolean declaration,
+            @SerializedName("type")
+            TokenType type,
+            @SerializedName("methodName")
+            String methodName,
+            @SerializedName("methodDescriptor")
+            String methodDescriptor,
+            @SerializedName("index")
+            int index,
+            @SerializedName("name")
+            String name
     ) implements Token {}
 }

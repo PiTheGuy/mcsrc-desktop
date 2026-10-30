@@ -67,8 +67,7 @@ public class TokenCollector extends TextTokenVisitor {
     @Override
     public void visitParameter(TextRange range, boolean declaration, String className, String methodName, MethodDescriptor methodDescriptor, int index, String name) {
         super.visitParameter(range, declaration, className, methodName, methodDescriptor, index, name);
-        currentTokens.add(new Token.NonMethodToken(range.start, range.length, name, declaration, Token.TokenType.PARAMETER));
-
+        currentTokens.add(new Token.ParameterToken(range.start, range.length, className, declaration, Token.TokenType.PARAMETER, methodName, methodDescriptor.toString(), index, name));
     }
 
     @Override
