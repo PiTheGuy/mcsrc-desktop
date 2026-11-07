@@ -19,7 +19,10 @@ import java.util.List;
 
 import static pitheguy.mcsrcdesktop.util.SharedConstants.GSON;
 
-public record OpenProjectJavadocQuery() implements JavadocQuery {
+public record OpenProjectJavadocQuery(
+        @SerializedName("alternateFilePicker")
+        boolean alternateFilePicker
+) implements JavadocQuery {
 
     public static final String MISSING_PROPERTIES_ERROR = "config.json must contain a Minecraft \"version\" and a relative \"mappings\" directory path.";
 
@@ -48,7 +51,17 @@ public record OpenProjectJavadocQuery() implements JavadocQuery {
     }
 
     private Path openFilePicker() {
-        return NativeFileDialogs.pickFolder(null).orElse(null);
+        if (alternateFilePicker) {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int result = chooser.showOpenDialog(null);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                return chooser.getSelectedFile().toPath();
+            }
+            return null;
+        } else {
+            return NativeFileDialogs.pickFolder(null).orElse(null);
+        }
     }
 
     private AnnotatorConfig parseAnnotatorConfig(Path path) throws IOException {
