@@ -14,6 +14,12 @@ repositories {
     maven {url = 'https://maven.fabricmc.net'}
 }
 
+def lwjglNatives = [
+        "natives-windows", "natives-windows-arm64",
+        "natives-macos", "natives-macos-arm64",
+        "natives-linux", "natives-linux-arm64"
+]
+
 dependencies {
     implementation libs.jcef
     implementation libs.vineflower
@@ -22,6 +28,13 @@ dependencies {
     implementation libs.mcsrc
     implementation libs.jopt
     implementation libs.log4j
+    implementation libs.bundles.lwjgl
+
+    lwjglNatives.each { platform ->
+        [libs.lwjgl, libs.nfd].each { lib ->
+            runtimeOnly variantOf(lib) { classifier(platform) }
+        }
+    }
 }
 
 java {

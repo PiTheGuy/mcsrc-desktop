@@ -7,6 +7,7 @@ import com.google.gson.annotations.SerializedName;
 import org.cef.callback.CefQueryCallback;
 import pitheguy.mcsrcdesktop.cef.query.CefQueryContext;
 import pitheguy.mcsrcdesktop.javadoc.AnnotatorConfig;
+import pitheguy.mcsrcdesktop.util.NativeFileDialogs;
 
 import javax.swing.*;
 import java.io.FileReader;
@@ -47,13 +48,7 @@ public record OpenProjectJavadocQuery() implements JavadocQuery {
     }
 
     private Path openFilePicker() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        int result = chooser.showOpenDialog(null);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            return chooser.getSelectedFile().toPath();
-        }
-        return null;
+        return NativeFileDialogs.pickFolder(null).orElse(null);
     }
 
     private AnnotatorConfig parseAnnotatorConfig(Path path) throws IOException {
