@@ -6,6 +6,7 @@ import mcsrc.Entry;
 import mcsrc.MemberData;
 
 import java.lang.reflect.Type;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -16,6 +17,7 @@ public class ExtraTypeAdapters {
     public static Object INSTANT = new InstantAdapter();
     public static Object CLASS_DATA = new ClassDataAdapter();
     public static Object MEMBER_DATA = new MemberDataAdapter();
+    public static Object PATH = new PathAdapter();
 
     private static class InstantAdapter implements JsonSerializer<Instant>, JsonDeserializer<Instant> {
         @Override
@@ -51,7 +53,6 @@ public class ExtraTypeAdapters {
     }
 
     private static class MemberDataAdapter implements JsonSerializer<MemberData>, JsonDeserializer<MemberData> {
-
         @Override
         public MemberData deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             String[] parts = json.getAsString().split("\\|", -1);
@@ -93,6 +94,18 @@ public class ExtraTypeAdapters {
         private static Entry.Field parseField(String value) {
             String[] parts = value.split(":", 3);
             return new Entry.Field(parts[0], parts[1], parts[2]);
+        }
+    }
+
+    private static class PathAdapter implements JsonSerializer<Path>, JsonDeserializer<Path> {
+        @Override
+        public Path deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            return Path.of(json.getAsString());
+        }
+
+        @Override
+        public JsonElement serialize(Path src, Type typeOfSrc, JsonSerializationContext context) {
+            return new JsonPrimitive(src.toString());
         }
     }
 }

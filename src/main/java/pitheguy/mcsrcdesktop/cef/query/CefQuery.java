@@ -2,6 +2,7 @@ package pitheguy.mcsrcdesktop.cef.query;
 
 import com.google.gson.JsonObject;
 import org.cef.callback.CefQueryCallback;
+import pitheguy.mcsrcdesktop.cef.query.javadoc.JavadocQuery;
 
 import java.util.Map;
 
@@ -13,7 +14,8 @@ public interface CefQuery {
             "decompile", DecompileQuery.TYPE,
             "bytecode", BytecodeQuery.TYPE,
             "index", IndexQuery.TYPE,
-            "remap", RemapQuery.TYPE
+            "remap", RemapQuery.TYPE,
+            "javadoc", JavadocQuery.TYPE
     );
 
     CefQueryType<? extends CefQuery> type();

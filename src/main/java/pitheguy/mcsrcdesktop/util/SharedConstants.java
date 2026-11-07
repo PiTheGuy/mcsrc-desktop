@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import mcsrc.ClassData;
 import mcsrc.MemberData;
 
+import java.nio.file.Path;
 import java.time.Instant;
 
 public class SharedConstants {
@@ -15,5 +16,6 @@ public class SharedConstants {
             .registerTypeAdapter(Instant.class, ExtraTypeAdapters.INSTANT)
             .registerTypeAdapter(ClassData.class, ExtraTypeAdapters.CLASS_DATA)
             .registerTypeAdapter(MemberData.class, ExtraTypeAdapters.MEMBER_DATA)
+            .registerTypeAdapter(Path.class, ExtraTypeAdapters.PATH)
             .create();
 }
