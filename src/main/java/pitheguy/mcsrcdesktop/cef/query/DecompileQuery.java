@@ -5,6 +5,7 @@ import org.cef.callback.CefQueryCallback;
 import pitheguy.mcsrcdesktop.decompile.DecompileResult;
 import pitheguy.mcsrcdesktop.decompile.DecompilerOptions;
 import pitheguy.mcsrcdesktop.decompile.MinecraftDecompiler;
+import pitheguy.mcsrcdesktop.javadoc.UnpickConfig;
 
 import static pitheguy.mcsrcdesktop.util.SharedConstants.GSON;
 
@@ -13,6 +14,8 @@ public record DecompileQuery(
         String className,
         @SerializedName("version")
         String version,
+        @SerializedName("unpick")
+        UnpickConfig unpick,
         @SerializedName("options")
         DecompilerOptions options
 ) implements CefQuery {
@@ -26,7 +29,7 @@ public record DecompileQuery(
     @Override
     public void handle(CefQueryCallback callback, CefQueryContext context) throws Exception {
         MinecraftDecompiler decompiler = MinecraftDecompiler.create(context.downloader(), version);
-        DecompileResult result = decompiler.decompile(className, options);
+        DecompileResult result = decompiler.decompile(className, options, unpick);
         callback.success(GSON.toJson(result));
     }
 }

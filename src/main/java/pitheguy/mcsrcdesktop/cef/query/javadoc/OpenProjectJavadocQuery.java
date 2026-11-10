@@ -1,12 +1,13 @@
 package pitheguy.mcsrcdesktop.cef.query.javadoc;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import org.cef.callback.CefQueryCallback;
 import pitheguy.mcsrcdesktop.cef.query.CefQueryContext;
-import pitheguy.mcsrcdesktop.javadoc.AnnotatorConfig;
+import pitheguy.mcsrcdesktop.javadoc.AnnotaterConfig;
+import pitheguy.mcsrcdesktop.javadoc.UnpickConfig;
+import pitheguy.mcsrcdesktop.javadoc.UnpickDefinition;
 import pitheguy.mcsrcdesktop.util.NativeFileDialogs;
 
 import javax.swing.*;
@@ -16,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static pitheguy.mcsrcdesktop.util.SharedConstants.GSON;
 
@@ -23,9 +25,6 @@ public record OpenProjectJavadocQuery(
         @SerializedName("alternateFilePicker")
         boolean alternateFilePicker
 ) implements JavadocQuery {
-
-    public static final String MISSING_PROPERTIES_ERROR = "config.json must contain a Minecraft \"version\" and a relative \"mappings\" directory path.";
-
     @Override
     public void handle(CefQueryCallback callback, CefQueryContext context) throws Exception {
         SwingUtilities.invokeLater(() -> {
@@ -35,9 +34,10 @@ public record OpenProjectJavadocQuery(
                     callback.success("null");
                     return;
                 }
-                AnnotatorConfig config = parseAnnotatorConfig(selectedPath);
-                List<MappingFile> fileContent = readJavadocDirectory(config.mappings());
-                callback.success(GSON.toJson(new Response(config.mappings().toString(), config.version(), fileContent)));
+                AnnotaterConfig config = parseAnnotatorConfig(selectedPath);
+                List<MappingFile> fileContent = readJavadocDirectory(selectedPath.resolve(config.mappings()));
+                UnpickConfig unpickConfig = config.unpickDefinitions() == null ? null : parseUnpickConfig(selectedPath.resolve(config.unpickDefinitions()));
+                callback.success(GSON.toJson(new Response(config.mappings(), unpickConfig, config.version(), fileContent)));
             } catch (Exception e) {
                 JavadocQuery.LOGGER.error("Error opening project", e);
                 callback.failure(-2, "Javadoc query failed \n" + e);
@@ -64,29 +64,49 @@ public record OpenProjectJavadocQuery(
         }
     }
 
-    private AnnotatorConfig parseAnnotatorConfig(Path path) throws IOException {
+    private AnnotaterConfig parseAnnotatorConfig(Path path) throws IOException {
         Path configFile = path.resolve("config.json");
-        JsonObject configJson = JsonParser.parseReader(new FileReader(configFile.toFile())).getAsJsonObject();
-        if (!configJson.has("mappings") || !configJson.has("version")) {
-            throw new IOException(MISSING_PROPERTIES_ERROR);
+        JsonElement configJson = JsonParser.parseReader(new FileReader(configFile.toFile()));
+        AnnotaterConfig config = GSON.fromJson(configJson, AnnotaterConfig.class);
+        if (!configJson.isJsonObject() || config.mappings() == null || config.version() == null) {
+            throw new IOException("config.json must contain a Minecraft \"version\" and a relative \"mappings\" directory path.");
         }
-        JsonElement mappingsEl = configJson.get("mappings");
-        JsonElement versionEl = configJson.get("version");
-        if (!mappingsEl.isJsonPrimitive() || !mappingsEl.getAsJsonPrimitive().isString() ||
-        !versionEl.isJsonPrimitive() || !versionEl.getAsJsonPrimitive().isString()) {
-            throw new IOException(MISSING_PROPERTIES_ERROR);
-        }
-        String mappings = mappingsEl.getAsString();
-        String version = versionEl.getAsString();
 
-        String[] mappingsParts = mappings.split("/");
-        for (String part : mappingsParts) {
-            if (part.isEmpty() || part.equals("..") || part.equals(".") || part.contains("\\") || part.contains("/")) {
-                throw new IOException("The \"mappings\" path must point to a subdirectory, using forward slashes.");
+        checkPath(configJson, "mappings", config.mappings());
+        checkPath(configJson, "runtimeLibraries", config.runtimeLibraries());
+        checkPath(configJson, "unpickDefinitions", config.unpickDefinitions());
+
+        return config;
+    }
+
+    private static void checkPath(JsonElement configJson, String key, String value) throws IOException {
+        if (configJson.getAsJsonObject().has(key) && value == null) {
+            throw new IOException("The \"" + key + "\" path must point to a subdirectory, using forward slashes.");
+        }
+
+        if (value == null) return;
+
+        String[] parts = value.split("/");
+        for (String part : parts) {
+            if (part.isEmpty() || part.equals("..") || part.equals(".") || part.contains("\\") || part.contains(":")) {
+                throw new IOException("The \"" + key + "\" path must point to a subdirectory, using forward slashes.");
             }
         }
+    }
 
-        return new AnnotatorConfig(path.resolve(Path.of(mappings)), version);
+    private UnpickConfig parseUnpickConfig(Path path) throws IOException {
+        List<Path> unpickFiles;
+        try (var stream = Files.walk(path)) {
+            unpickFiles = stream
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.toString().endsWith(".unpick"))
+                    .toList();
+        }
+        List<UnpickDefinition> definitions = new ArrayList<>();
+        for (Path unpickFile : unpickFiles) {
+            definitions.add(new UnpickDefinition(path.relativize(unpickFile).toString(), Files.readString(unpickFile)));
+        }
+        return new UnpickConfig(UUID.randomUUID().toString(), definitions);
     }
 
     private List<MappingFile> readJavadocDirectory(Path path) throws IOException {
@@ -116,6 +136,8 @@ public record OpenProjectJavadocQuery(
     record Response(
             @SerializedName("path")
             String path,
+            @SerializedName("unpick")
+            UnpickConfig unpick,
             @SerializedName("version")
             String version,
             @SerializedName("files")
