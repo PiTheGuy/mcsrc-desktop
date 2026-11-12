@@ -5,12 +5,15 @@ import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import org.cef.callback.CefQueryCallback;
 import pitheguy.mcsrcdesktop.cef.query.CefQueryContext;
+import pitheguy.mcsrcdesktop.download.VersionInfo;
 import pitheguy.mcsrcdesktop.javadoc.AnnotaterConfig;
+import pitheguy.mcsrcdesktop.javadoc.RuntimeLibrary;
 import pitheguy.mcsrcdesktop.javadoc.UnpickConfig;
 import pitheguy.mcsrcdesktop.javadoc.UnpickDefinition;
 import pitheguy.mcsrcdesktop.util.NativeFileDialogs;
 
 import javax.swing.*;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,9 +40,10 @@ public record OpenProjectJavadocQuery(
                 AnnotaterConfig config = parseAnnotatorConfig(selectedPath);
                 List<MappingFile> fileContent = readJavadocDirectory(selectedPath.resolve(config.mappings()));
                 UnpickConfig unpickConfig = config.unpickDefinitions() == null ? null : parseUnpickConfig(selectedPath.resolve(config.unpickDefinitions()));
-                callback.success(GSON.toJson(new Response(config.mappings(), unpickConfig, config.version(), fileContent)));
+                List<RuntimeLibrary> runtimeLibraries = extractRuntimeLibraries(context, config.version());
+                callback.success(GSON.toJson(new Response(config.mappings(), unpickConfig, runtimeLibraries, config.version(), fileContent)));
             } catch (Exception e) {
-                JavadocQuery.LOGGER.error("Error opening project", e);
+                LOGGER.error("Error opening project", e);
                 callback.failure(-2, "Javadoc query failed \n" + e);
             }
         });
@@ -109,6 +113,21 @@ public record OpenProjectJavadocQuery(
         return new UnpickConfig(UUID.randomUUID().toString(), definitions);
     }
 
+    private List<RuntimeLibrary> extractRuntimeLibraries(CefQueryContext context, String version) {
+        try {
+            VersionInfo versionInfo = context.downloader().fetchVersionInfo(version);
+            List<File> libraryFiles = context.downloader().fetchLibraries(versionInfo);
+            List<RuntimeLibrary> libraries = new ArrayList<>();
+            for (File libraryFile : libraryFiles) {
+                libraries.add(new RuntimeLibrary(libraryFile));
+            }
+            return libraries;
+        } catch (Exception e) {
+            LOGGER.warn("Failed to fetch libraries for Annotater project", e);
+            return null;
+        }
+    }
+
     private List<MappingFile> readJavadocDirectory(Path path) throws IOException {
         List<Path> mappingsFiles;
         try (var stream = Files.walk(path)) {
@@ -138,6 +157,8 @@ public record OpenProjectJavadocQuery(
             String path,
             @SerializedName("unpick")
             UnpickConfig unpick,
+            @SerializedName("runtimeLibraries")
+            List<RuntimeLibrary> runtimeLibraries,
             @SerializedName("version")
             String version,
             @SerializedName("files")
