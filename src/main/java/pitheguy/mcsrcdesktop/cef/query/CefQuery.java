@@ -15,7 +15,8 @@ public interface CefQuery {
             "bytecode", BytecodeQuery.TYPE,
             "index", IndexQuery.TYPE,
             "remap", RemapQuery.TYPE,
-            "javadoc", JavadocQuery.TYPE
+            "javadoc", JavadocQuery.TYPE,
+            "file", FileQuery.TYPE
     );
 
     CefQueryType<? extends CefQuery> type();

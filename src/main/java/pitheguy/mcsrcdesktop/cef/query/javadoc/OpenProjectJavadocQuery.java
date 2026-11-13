@@ -41,7 +41,8 @@ public record OpenProjectJavadocQuery(
                 List<MappingFile> fileContent = readJavadocDirectory(selectedPath.resolve(config.mappings()));
                 UnpickConfig unpickConfig = config.unpickDefinitions() == null ? null : parseUnpickConfig(selectedPath.resolve(config.unpickDefinitions()));
                 List<RuntimeLibrary> runtimeLibraries = extractRuntimeLibraries(context, config.version());
-                callback.success(GSON.toJson(new Response(config.mappings(), unpickConfig, runtimeLibraries, config.version(), fileContent)));
+                String path = selectedPath.resolve(config.mappings()).toString().replace(File.separatorChar, '/');
+                callback.success(GSON.toJson(new Response(path, unpickConfig, runtimeLibraries, config.version(), fileContent)));
             } catch (Exception e) {
                 LOGGER.error("Error opening project", e);
                 callback.failure(-2, "Javadoc query failed \n" + e);
