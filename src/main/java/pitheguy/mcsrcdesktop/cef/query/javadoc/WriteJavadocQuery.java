@@ -16,8 +16,13 @@ public record WriteJavadocQuery(
         String base64) implements JavadocQuery {
     @Override
     public Object handleAction(CefQueryCallback callback, CefQueryContext context) throws Exception {
-        Path tempFile = Files.createTempFile(path.getFileName().toString(), ".mapping");
         byte[] bytes = Base64.getDecoder().decode(base64);
+        if (bytes.length == 0) {
+            Files.deleteIfExists(path);
+            //TODO delete empty directories too
+            return null;
+        }
+        Path tempFile = Files.createTempFile(path.getFileName().toString(), ".mapping");
         Files.write(tempFile, bytes);
         Files.createDirectories(path.getParent());
         FileUtil.safeAtomicMove(tempFile, path);
