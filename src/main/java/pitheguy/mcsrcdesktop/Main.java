@@ -10,6 +10,8 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.cef.*;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefMessageRouter;
+import org.cef.callback.CefJSDialogCallback;
+import org.cef.handler.CefJSDialogHandlerAdapter;
 import pitheguy.mcsrcdesktop.cef.Browser;
 import pitheguy.mcsrcdesktop.cef.BrowserKeyboardHandler;
 import pitheguy.mcsrcdesktop.cef.EventHandler;
@@ -17,6 +19,7 @@ import pitheguy.mcsrcdesktop.cef.MainFrame;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.util.Util;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.function.Function;
 
@@ -61,13 +64,26 @@ public class Main {
         CefApp app = builder.build();
         CefClient client = app.createClient();
         client.addKeyboardHandler(new BrowserKeyboardHandler());
+        client.addJSDialogHandler(new CefJSDialogHandlerAdapter() {
+            @Override
+            public boolean onBeforeUnloadDialog(CefBrowser browser, String message_text, boolean is_reload, CefJSDialogCallback callback) {
+                SwingUtilities.invokeLater(() -> {
+                    int choice = JOptionPane.showConfirmDialog(SwingUtilities.getWindowAncestor(browser.getUIComponent()),
+                            "You have unsaved changes. Exit anyway?",
+                            "Unsaved Changes",
+                            JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    callback.Continue(choice == JOptionPane.YES_OPTION, "");
+                });
+                return false;
+            }
+        });
         Function<Dimension, CefBrowser> windowedBrowserFactory = _ -> client.createBrowser(devMode ? DEV_URL : PRODUCTION_URL, false, false);
         Function<Dimension, CefBrowser> windowlessBrowserFactory = canvasSize -> new Browser(client, devMode ? DEV_URL : PRODUCTION_URL, null, createBrowserSettings(), canvasSize);
         CefMessageRouter messageRouter = CefMessageRouter.create();
         MinecraftDownloader downloader = new MinecraftDownloader(Util.getAppDataDir());
         messageRouter.addHandler(new EventHandler(downloader), true);
         client.addMessageRouter(messageRouter);
-        new MainFrame(useWindowlessRendering ? windowlessBrowserFactory : windowedBrowserFactory);
+        new MainFrame(client, useWindowlessRendering ? windowlessBrowserFactory : windowedBrowserFactory);
     }
 
     CefBrowserSettings createBrowserSettings() {
