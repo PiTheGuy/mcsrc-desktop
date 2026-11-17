@@ -13,12 +13,16 @@ import pitheguy.mcsrcdesktop.cef.query.CefQueryContext;
 import pitheguy.mcsrcdesktop.download.MinecraftDownloader;
 import pitheguy.mcsrcdesktop.index.MinecraftIndexer;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 public class EventHandler extends CefMessageRouterHandlerAdapter implements CefQueryContext {
     private static final Logger LOGGER = LogManager.getLogger(EventHandler.class);
 
     private final MinecraftDownloader downloader;
     private MinecraftIndexer indexer;
 
+    private final Executor queryExecutor = Executors.newCachedThreadPool();
 
     public EventHandler(MinecraftDownloader downloader) {
         this.downloader = downloader;
@@ -30,12 +34,14 @@ public class EventHandler extends CefMessageRouterHandlerAdapter implements CefQ
         JsonObject json = JsonParser.parseString(request).getAsJsonObject();
         CefQuery query = CefQuery.deserialize(json);
         if (query == null) return false;
-        try {
-            query.handle(callback, this);
-        } catch (Exception e) {
-            LOGGER.error("Failed to handle query {}", query, e);
-            callback.failure(-2, "Failed to handle query " + query + "\n" + e);
-        }
+        queryExecutor.execute(() -> {
+            try {
+                query.handle(callback, this);
+            } catch (Exception e) {
+                LOGGER.error("Failed to handle query {}", query, e);
+                callback.failure(-2, "Failed to handle query " + query + "\n" + e);
+            }
+        });
         return true;
     }
 
