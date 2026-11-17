@@ -40,6 +40,7 @@ public class Main {
             parser.printHelpOn(System.out);
             return;
         }
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         boolean devMode = options.has(devOpt);
         boolean useWindowlessRendering = options.has(windowlessOpt) || OS.isLinux(); // Use windowless rendering on Linux to avoid windowing issues
         if (options.has(verboseOpt)) {
