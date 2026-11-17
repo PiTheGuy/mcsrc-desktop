@@ -28,6 +28,20 @@ public interface FileQuery extends CefQuery {
         return GSON.fromJson(json, action.queryClass());
     }
 
+    String path();
+
+    default void handle(CefQueryCallback callback, CefQueryContext context) throws Exception {
+        try {
+            handleAction(callback, context);
+        } catch (NoSuchFileException e) {
+            callback.failure(ErrorCodes.FILE_NOT_FOUND, "File not found: " + path());
+        } catch (DirectoryNotEmptyException e) {
+            callback.failure(ErrorCodes.DIRECTORY_NOT_EMPTY, "Directory not empty: " + path());
+        }
+    }
+
+    void handleAction(CefQueryCallback callback, CefQueryContext context) throws Exception;
+
     enum Action {
         @SerializedName("read")
         READ(Read.class),
@@ -58,13 +72,9 @@ public interface FileQuery extends CefQuery {
             String path
     ) implements FileQuery {
         @Override
-        public void handle(CefQueryCallback callback, CefQueryContext context) throws Exception {
-            try {
-                String url = FileUtil.toDataUrl(new File(path), "unknown");
-                callback.success(GSON.toJson(url));
-            } catch (NoSuchFileException e) {
-                callback.failure(ErrorCodes.FILE_NOT_FOUND, "File not found: " + path);
-            }
+        public void handleAction(CefQueryCallback callback, CefQueryContext context) throws Exception {
+            String url = FileUtil.toDataUrl(new File(path), "unknown");
+            callback.success(GSON.toJson(url));
         }
     }
 
@@ -75,13 +85,9 @@ public interface FileQuery extends CefQuery {
             byte[] bytes
     ) implements FileQuery {
         @Override
-        public void handle(CefQueryCallback callback, CefQueryContext context) throws Exception {
-            try {
-                Files.write(Path.of(path), bytes);
-                callback.success(GSON.toJson(null));
-            } catch (NoSuchFileException e) {
-                callback.failure(ErrorCodes.FILE_NOT_FOUND, "File not found: " + path);
-            }
+        public void handleAction(CefQueryCallback callback, CefQueryContext context) throws Exception {
+            Files.write(Path.of(path), bytes);
+            callback.success(GSON.toJson(null));
         }
     }
 
@@ -90,7 +96,7 @@ public interface FileQuery extends CefQuery {
             String path
     ) implements FileQuery {
         @Override
-        public void handle(CefQueryCallback callback, CefQueryContext context) throws Exception {
+        public void handleAction(CefQueryCallback callback, CefQueryContext context) throws Exception {
             Files.createFile(Path.of(path));
             callback.success(GSON.toJson(null));
         }
@@ -101,7 +107,7 @@ public interface FileQuery extends CefQuery {
             String path
     ) implements FileQuery {
         @Override
-        public void handle(CefQueryCallback callback, CefQueryContext context) throws Exception {
+        public void handleAction(CefQueryCallback callback, CefQueryContext context) throws Exception {
             Files.createDirectory(Path.of(path));
             callback.success(GSON.toJson(null));
         }
@@ -114,20 +120,14 @@ public interface FileQuery extends CefQuery {
             boolean recursive
     ) implements FileQuery {
         @Override
-        public void handle(CefQueryCallback callback, CefQueryContext context) throws Exception {
-            try {
-                if (recursive) {
-                    try (var stream = Files.walk(Path.of(path))) {
-                        List<Path> paths = stream.toList();
-                        for (Path path : paths) Files.delete(path);
-                    }
-                } else {
-                    Files.delete(Path.of(path));
+        public void handleAction(CefQueryCallback callback, CefQueryContext context) throws Exception {
+            if (recursive) {
+                try (var stream = Files.walk(Path.of(path))) {
+                    List<Path> paths = stream.toList();
+                    for (Path path : paths) Files.delete(path);
                 }
-            } catch (NoSuchFileException e) {
-                callback.failure(ErrorCodes.FILE_NOT_FOUND, "File not found: " + path);
-            } catch (DirectoryNotEmptyException e) {
-                callback.failure(ErrorCodes.DIRECTORY_NOT_EMPTY, "Directory not empty");
+            } else {
+                Files.delete(Path.of(path));
             }
         }
     }
@@ -137,7 +137,7 @@ public interface FileQuery extends CefQuery {
             String path
     ) implements FileQuery {
         @Override
-        public void handle(CefQueryCallback callback, CefQueryContext context) throws Exception {
+        public void handleAction(CefQueryCallback callback, CefQueryContext context) throws Exception {
             try (var stream = Files.list(Path.of(path))) {
                 callback.success(GSON.toJson(stream.map(SerializedFile::new).toList()));
             }
