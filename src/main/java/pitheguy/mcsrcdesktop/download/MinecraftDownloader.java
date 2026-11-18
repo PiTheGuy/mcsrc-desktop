@@ -3,11 +3,13 @@ package pitheguy.mcsrcdesktop.download;
 import pitheguy.mcsrcdesktop.util.ProgressListener;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,12 +40,21 @@ public class MinecraftDownloader {
 
     public VersionInfo fetchVersionInfo(String version) throws IOException, InterruptedException {
         if (versions.containsKey(version)) return versions.get(version);
+        String fileName = version + ".txt";
+        Path path = dataDir.resolve("version_info").resolve(fileName);
+        if (Files.exists(path)) {
+            VersionInfo versionInfo = GSON.fromJson(new FileReader(path.toFile()), VersionInfo.class);
+            versions.put(version, versionInfo);
+            return versionInfo;
+        }
         VersionManifest manifest = fetchVersionManifest();
         VersionManifest.VersionEntry entry = manifest.findVersionEntry(version);
         if (entry == null) throw new IllegalArgumentException("Unknown version: " + version);
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(entry.url())).build();
         var response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         VersionInfo versionInfo = GSON.fromJson(response.body(), VersionInfo.class);
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, response.body());
         versions.put(version, versionInfo);
         return versionInfo;
     }
