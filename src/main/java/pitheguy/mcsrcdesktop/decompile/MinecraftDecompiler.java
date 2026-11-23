@@ -14,15 +14,14 @@ import pitheguy.mcsrcdesktop.util.FileUtil;
 import pitheguy.mcsrcdesktop.util.SharedConstants;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class MinecraftDecompiler {
-    private static final Logger LOGGER = LogManager.getLogger(ClassSource.class);
+    private static final Logger LOGGER = LogManager.getLogger(MinecraftDecompiler.class);
+
+    private static UnpickConfig lastUnpickConfig;
 
     private final String version;
     private final File jar;
@@ -45,8 +44,11 @@ public class MinecraftDecompiler {
 
     public DecompileResult decompile(String className, DecompilerOptions options, UnpickConfig unpickConfig) {
         try {
-            boolean useCache = unpickConfig != null;
-            if (useCache && DecompilerCache.contains(className, version, options)) {
+            if (!Objects.equals(unpickConfig, lastUnpickConfig)) {
+                DecompilerCache.clear();
+                lastUnpickConfig = unpickConfig;
+            }
+            if (DecompilerCache.contains(className, version, options)) {
                 return DecompilerCache.get(className, version, options);
             }
             checkVersionDownloaded();
@@ -73,7 +75,7 @@ public class MinecraftDecompiler {
             String source = output.get(className);
             Token[] classTokens = tokens.get(source).toArray(Token[]::new);
             DecompileResult result = new DecompileResult(className, FileUtil.stripExtension(jar.getName()), classSource.crc32(), source, classTokens, DecompileResult.Language.JAVA, SharedConstants.VINEFLOWER_VERSION);
-            if (useCache) DecompilerCache.put(className, version, options, result);
+            DecompilerCache.put(className, version, options, result);
             return result;
         } catch (Exception e) {
             StackTraceWriter sw = new StackTraceWriter();

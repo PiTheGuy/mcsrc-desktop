@@ -21,5 +21,9 @@ public class DecompilerCache {
         cache.put(new CacheKey(className, version, options), result);
     }
 
+    public static void clear() {
+        cache.clear();
+    }
+
     private record CacheKey(String className, String version, DecompilerOptions options) {}
 }
